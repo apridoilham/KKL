@@ -9,7 +9,8 @@ use Livewire\WithPagination;
 class ItemComponent extends Component
 {
     use WithPagination;
-    protected $paginationTheme = 'bootstrap';
+    // Mengganti tema pagination dari 'bootstrap' ke view kustom kita
+    protected $paginationTheme = 'tailwind-custom';
 
     public $data;
     public $search = ''; // Variabel untuk menyimpan kata kunci pencarian
@@ -30,7 +31,7 @@ class ItemComponent extends Component
     public function mount()
     {
         $this->data = [
-            'title' => 'Manage Items Page',
+            'title' => 'Manage Items',
             'urlPath' => 'item'
         ];
     }
@@ -54,7 +55,9 @@ class ItemComponent extends Component
 
     public function store(){
         $this->validate([
-            'name' => 'required',
+            'name' => 'required|string|max:255',
+            'category' => 'nullable|string|max:255',
+            'code' => 'nullable|string|max:50',
         ]);
 
         Item::updateOrCreate(
@@ -85,7 +88,6 @@ class ItemComponent extends Component
     }
 
     public function delete($id){
-        // Pengecekan Role ditambahkan di sini
         if (auth()->user()->role !== 'admin') {
             session()->flash('dataSession', (object) [
                 'status' => 'failed',
@@ -115,11 +117,11 @@ class ItemComponent extends Component
             ->where('code', 'like', '%'.$this->search.'%')
             ->orWhere('category', 'like', '%'.$this->search.'%')
             ->orWhere('name', 'like', '%'.$this->search.'%')
+            ->latest() // Mengurutkan dari yang terbaru
             ->paginate($this->perPage);
 
         return view('livewire.item',[
             'items' => $items,
-            'no' => ($items->currentPage() - 1) * $this->perPage + 1
         ])->layout('components.layouts.app',['data' => $this->data]);
     }
 }
