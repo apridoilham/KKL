@@ -13,10 +13,14 @@ class HomeComponent extends Component
 {
     public $data;
 
-    public $totalItems, $totalIn, $totalOut, $totalDamaged;
+    public $totalItems, $totalIn, $totalOut, $totalDamaged, $totalUsers;
     public $categories = [];
     public $quantities = [];
     public $stockTrend = [];
+    
+    // Palet warna baru untuk grafik
+    public $pieChartColors = ['#4A55A2', '#7895CB', '#A0BFE0', '#C5DFF8'];
+    public $doughnutChartColors = ['#28a745', '#ffc107', '#dc3545'];
 
     public $isModalOpen = false;
     public $isModalOpenData = false;
@@ -24,18 +28,15 @@ class HomeComponent extends Component
     public $checkData, $isVerified;
     public $username, $password, $newPassword, $confPass, $name, $securityQuestion, $securityAnswer;
 
-
-    /* 
-        mount akan diload ketika pertama kali dijalankan sebelum view ditampilkan
-    */
     public function mount()
     {
         $this->data = [
-            'title' => 'Home Page',
+            'title' => 'Dashboard',
             'urlPath' => 'home'
         ];
         // Hitung total items
         $this->totalItems = Item::count();
+        $this->totalUsers = User::count();
 
         // Hitung total transaksi berdasarkan tipe
         $this->totalIn = Transaction::where('type', 'in')->sum('quantity');
@@ -43,91 +44,66 @@ class HomeComponent extends Component
         $this->totalDamaged = Transaction::where('type', 'damaged')->sum('quantity');
 
         $this->updateChartData();
-    
     }
 
+    public function updateChartData(){
+        $data = Item::select('category', DB::raw('SUM(quantity) as total_quantity'))
+            ->groupBy('category')
+            ->get();
 
+        $this->categories = $data->pluck('category')->map(fn($cat) => $cat ?? 'Uncategorized');
+        $this->quantities = $data->pluck('total_quantity');
+        
+        if($this->categories->isEmpty()){
+            $this->categories = ['No Data'];
+            $this->quantities = [0];
+        }
+
+        $this->stockTrend = [
+            'in_quantity' => $this->totalIn,
+            'out_quantity' => $this->totalOut,
+            'damaged_quantity' => $this->totalDamaged,
+        ];
+    }
+    
     public function checkUser(){
         $this->validate([
             'username' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        // Cek apakah user ada
         $user = User::where('username', $this->username)->first();
 
-        if(!$user)
-        return session()->flash('dataSession', (object) [
-            'status' => 'failed',
-            'message' => 'Incorrect username or password'
-        ]);
-        
-        if (Hash::check($this->password, $user->password)) {
-            $this->isVerified = true;
-            $this->name = $user->name;
-            $this->securityQuestion = $user->security_question;
-        } else {
-            return session()->flash('dataSession', (object) [
+        if(!$user || !Hash::check($this->password, $user->password)) {
+             return session()->flash('dataSession', (object) [
                 'status' => 'failed',
                 'message' => 'Incorrect username or password'
             ]);
         }
-    }
-
-
-    
-
-    public function updateChartData(){
-        // Ambil data stok per kategori
-        $data = Item::select('category', DB::raw('SUM(quantity) as total_quantity'))
-            ->groupBy('category')
-            ->get();
-
-        //pluck itu untuk mendapatkan data sesuai yang kita nginkan, dan menjadikan array baru
-        // Simpan data kategori dan jumlah stok ke variabel
-        $this->categories = $data->pluck('category'); // Ambil nama kategori
-        $this->quantities = $data->pluck('total_quantity'); // Ambil jumlah stok
-
-
-        // Ambil data stok berdasarkan waktu dengan grouping berdasarkan bulan/tanggal
-        $data2 = [
-            'in_quantity' => Transaction::where('type', 'in')->sum('quantity'),
-            'out_quantity' => Transaction::where('type', 'out')->sum('quantity'),
-            'damaged_quantity' => Transaction::where('type', 'damaged')->sum('quantity'),
-        ];
         
-        $this->stockTrend = (object) $data2;
+        $this->isVerified = true;
+        $this->name = $user->name;
+        $this->securityQuestion = $user->security_question;
     }
-
-    
 
     public function changePassword(){
         $this->validate([
-            'newPassword' => 'required|string',
-            'confPass' => 'required|string',
-        ]);
-
-        if($this->newPassword !== $this->confPass)
-        return session()->flash('dataSession', (object) [
-            'status' => 'failed',
-            'message' => 'Confirmation password is not same '
+            'newPassword' => 'required|min:6',
+            'confPass' => 'required|same:newPassword',
         ]);
 
         User::where('username','=', $this->username)
-            ->update([
-                'password' => bcrypt($this->newPassword)
-            ]);
+            ->update(['password' => bcrypt($this->newPassword)]);
 
         session()->flash('dataSession', (object) [
             'status' => 'success',
             'message' => 'Password changed successfully'
         ]);
-
-        $this->newPassword = '';
-        $this->confPass = '';
+        
+        $this->reset(['newPassword', 'confPass', 'password', 'isVerified', 'username']);
+        $this->isModalOpen = false;
     }
     
-
     public function changeData(){
         $this->validate([
             'name' => 'required|string',
@@ -135,7 +111,7 @@ class HomeComponent extends Component
             'securityAnswer' => 'required|string',
         ]);
 
-        User::where('username','=', $this->username)
+        User::where('username','=', auth()->user()->username)
             ->update([
                 'name' => $this->name,
                 'security_question' => $this->securityQuestion,
@@ -147,10 +123,12 @@ class HomeComponent extends Component
             'message' => 'Data changed successfully'
         ]);
 
-        $this->name = '';
-        $this->securityQuestion = '';
-        $this->securityAnswer = '';
+        $this->reset(['name', 'securityQuestion', 'securityAnswer']);
+        $this->isModalOpenData = false;
+        // Refresh component data
+        return redirect()->route('home');
     }
+
     public function render()
     {
         return view('livewire.home')
