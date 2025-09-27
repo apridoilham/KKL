@@ -11,170 +11,75 @@ use Livewire\Component;
 class ReportComponent extends Component
 {
     public $data;
-    public $filter, $filterBy;
+    public $filter = '';
+    public $filterBy = '';
     public $dateFrom, $dateUntil, $monthFrom, $monthUntil;
     public $selectYear;
-    public $no = 1;
+    
     public $reportData;
+    public $noDataFound = false; // Properti baru untuk menangani state "data tidak ditemukan"
 
     public function mount()
     {
         $this->data = [
-            'title' => 'Report Page',
+            'title' => 'Generate Reports',
             'urlPath' => 'report'
         ];
-
         $this->selectYear = Carbon::now()->year;
     }
 
-    /* 
-        Ini akan mereset semua data dan tampilan ke semula. Karena semua tampilan report di handle di property $filter, $filterBy dan $reportData
-    */
-
-    public function handleReset(){
-        $this->filter = '';
-        $this->filterBy = '';
-        $this->reportData= '';
+    public function updatedFilter()
+    {
+        $this->reset(['filterBy', 'reportData', 'noDataFound']);
     }
 
-    /*
-        - handleCheck() digunakan untuk menampilkan data terlebih dahulu sebelum di cetak
-        - data yang bisa dicetak ada 4 yaitu data items, items in, items out dan items damaged
-        - filterBynya ada 3 yaitu by date, mount, dan year
-    */
+    public function handleReset(){
+        $this->reset(['filter', 'filterBy', 'reportData', 'noDataFound', 'dateFrom', 'dateUntil', 'monthFrom', 'monthUntil']);
+        $this->selectYear = Carbon::now()->year;
+    }
 
-    public function handleCheck(){
+    public function generatePreview(){
+        $this->reportData = null;
+        $this->noDataFound = false;
+        $query = null;
+        $dataFound = null;
 
-        if($this->filterBy == 'date'){
-            /* 
-                Jika by date, maka akan menggunakan parameter tanggal dari (dateFrom) dan sampai tanggal (dateUntil)
-            */
-            if($this->dateFrom == '' || $this->dateUntil == ''){
-                session()->flash('dataSession', (object) [
-                    'status' => 'failed',
-                    'message' => 'Make sure to fill in all date inputs'
-                ]);
-            }else{
-                if($this->filter == 'item'){
-
-                    $data = Item::whereBetween('created_at',[$this->dateFrom, $this->dateUntil])
-                    ->orderBy('created_at', 'desc')
-                    ->get();
-
-                    !$data->isEmpty() ? $this->reportData = $data : session()->flash('dataSession', (object) [
-                        'status' => 'failed',
-                        'message' => 'No data found in that date range'
-                    ]);
-          
-
-                }else{
-
-                    $transactions = Transaction::query()
-                    ->with('item')
-                    ->where('type', $this->filter)
-                    ->whereBetween('created_at',[$this->dateFrom, $this->dateUntil])
-                    ->orderBy('created_at', 'desc')->get();
-
-                    !$transactions->isEmpty() ? $this->reportData = $transactions : session()->flash('dataSession', (object) [
-                        'status' => 'failed',
-                        'message' => 'No data found in that date range'
-                    ]);
-
-                }
-                
+        if ($this->filterBy == 'date') {
+            $this->validate(['dateFrom' => 'required|date', 'dateUntil' => 'required|date|after_or_equal:dateFrom']);
+            if ($this->filter == 'item') {
+                $query = Item::whereBetween('created_at', [$this->dateFrom, $this->dateUntil]);
+            } else {
+                $query = Transaction::with('item')->where('type', $this->filter)->whereBetween('created_at', [$this->dateFrom, $this->dateUntil]);
             }
-        }else if($this->filterBy == 'month'){
-             /* 
-                Jika by month, maka akan menggunakan parameter bulan dari (monthFrom), sampai bulan (monthUntil) dan tahun (year)
-            */
-
-            if($this->monthFrom == '' || $this->monthUntil == '' || $this->selectYear == ''){
-
-                session()->flash('dataSession', (object) [
-                    'status' => 'failed',
-                    'message' => 'Make sure to fill in all month and year inputs'
-                ]);
-
-            }else{
-
-                if($this->filter == 'item'){
-
-                    $data = Item::whereYear('created_at', $this->selectYear)
-                    ->whereMonth('created_at', '>=', $this->monthFrom)
-                    ->whereMonth('created_at', '<=', $this->monthUntil)
-                    ->orderBy('created_at', 'desc')
-                    ->get();
-
-                    !$data->isEmpty() ? $this->reportData = $data : session()->flash('dataSession', (object) [
-                        'status' => 'failed',
-                        'message' => 'No data found in that date range'
-                    ]);
-
-                }else{
-
-                    $transactions = Transaction::query()
-                    ->with('item')
-                    ->where('type', $this->filter)
-                    ->whereYear('created_at', $this->selectYear)
-                    ->whereMonth('created_at', '>=', $this->monthFrom)
-                    ->whereMonth('created_at', '<=', $this->monthUntil)
-                    ->orderBy('created_at', 'desc')->get();
-
-                    !$transactions->isEmpty() ? $this->reportData = $transactions : session()->flash('dataSession', (object) [
-                        'status' => 'failed',
-                        'message' => 'No data found in that date range'
-                    ]);
-
-            
-                }
+        } elseif ($this->filterBy == 'month') {
+            $this->validate(['monthFrom' => 'required|integer', 'monthUntil' => 'required|integer|gte:monthFrom', 'selectYear' => 'required|integer']);
+            if ($this->filter == 'item') {
+                $query = Item::whereYear('created_at', $this->selectYear)->whereMonth('created_at', '>=', $this->monthFrom)->whereMonth('created_at', '<=', $this->monthUntil);
+            } else {
+                $query = Transaction::with('item')->where('type', $this->filter)->whereYear('created_at', $this->selectYear)->whereMonth('created_at', '>=', $this->monthFrom)->whereMonth('created_at', '<=', $this->monthUntil);
             }
-        }else{
-            /* 
-                Jika selain itu maka akan menggunakan parameter tahun (year)
-            */
-
-            if($this->selectYear == ''){
-                session()->flash('dataSession', (object) [
-                    'status' => 'failed',
-                    'message' => 'Make sure to fill in year inputs'
-                ]);
-            }else{
-
-                if($this->filter == 'item'){
-
-                    $data = Item::whereYear('created_at', $this->selectYear)
-                    ->orderBy('created_at', 'desc')
-                    ->get();
-
-                    !$data->isEmpty() ? $this->reportData = $data : session()->flash('dataSession', (object) [
-                        'status' => 'failed',
-                        'message' => 'No data found in that date range'
-                    ]);
-
-                }else{
-
-                    $transactions = Transaction::query()
-                    ->with('item')
-                    ->where('type', $this->filter)
-                    ->whereYear('created_at', $this->selectYear)
-                    ->orderBy('created_at', 'desc')->get();
-
-                    !$transactions->isEmpty() ? $this->reportData = $transactions : session()->flash('dataSession', (object) [
-                        'status' => 'failed',
-                        'message' => 'No data found in that date range'
-                    ]);
-
-                }
+        } else { // year
+            $this->validate(['selectYear' => 'required|integer']);
+            if ($this->filter == 'item') {
+                $query = Item::whereYear('created_at', $this->selectYear);
+            } else {
+                $query = Transaction::with('item')->where('type', $this->filter)->whereYear('created_at', $this->selectYear);
             }
+        }
+
+        $dataFound = $query->orderBy('created_at', 'desc')->get();
+
+        if ($dataFound->isNotEmpty()) {
+            $this->reportData = $dataFound;
+        } else {
+            $this->noDataFound = true;
         }
     }
 
-    /* 
-        - handlePrint() method untuk mencetak data
-        - data $dataFilter akan disimpan di session yang mana bisa digunakan di halaman lainnya
-        - Ketika method dieksekusi maka akan redirect ke halaman print.report yaitu ke komponen ReportPrintComponent
-    */
     public function handlePrint(){
+        if (!$this->reportData) {
+            return; // Mencegah print jika tidak ada data
+        }
 
         $dataFilter = [
             'filter' => $this->filter,
@@ -187,13 +92,12 @@ class ReportComponent extends Component
         ];
         session($dataFilter);
     
-        // Redirect ke halaman cetak
-        return Redirect::route('print.report')->with(['_blank' => true]);
+        // Mengirim event ke frontend untuk membuka tab baru
+        $this->dispatch('open-new-tab', url: route('print.report'));
     }
 
     public function render()
     {
-        return view('livewire.report')
-            ->layout('components.layouts.app',['data' => $this->data]);
+        return view('livewire.report')->layout('components.layouts.app', ['data' => $this->data]);
     }
 }

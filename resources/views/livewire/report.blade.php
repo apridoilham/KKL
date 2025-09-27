@@ -1,272 +1,121 @@
-<!-- Begin Page Content -->
-<div class="container-fluid">
+<div class="container-fluid px-4 md:px-6 py-6">
 
-  <!-- Page Heading -->
-  <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">{{$data['title']}}</h1>
-  </div>
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-extrabold text-slate-800">{{ $data['title'] }}</h1>
+            <p class="mt-1 text-slate-600">Filter and generate reports based on your inventory data.</p>
+        </div>
+    </div>
 
-  @if (session()->has('dataSession'))
-    @if (session('dataSession')->status == 'success')
-      <div class="alert alert-info alert-dismissible fade show" role="alert">
-        {{session('dataSession')->message}}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
+    <div class="bg-white rounded-xl shadow-lg">
+        <div class="p-8">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b pb-4">Report Options</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">1. Select Data Type</label>
+                    <select wire:model.live="filter" class="mt-1 block w-full pl-3 pr-8 py-2.5 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">-- Choose Data --</option>
+                        <option value="item">All Items</option>
+                        <option value="in">Items In</option>
+                        <option value="out">Items Out</option>
+                        <option value="damaged">Items Damaged</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700">2. Select Period</label>
+                    <select wire:model.live="filterBy" class="mt-1 block w-full pl-3 pr-8 py-2.5 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" @if(!$filter) disabled @endif>
+                        <option value="">-- Choose Period --</option>
+                        <option value="date">By Date</option>
+                        <option value="month">By Month</option>
+                        <option value="year">By Year</option>
+                    </select>
+                </div>
+                <div class="space-y-4">
+                    @if ($filterBy == 'date')
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">3. Date Range</label>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <input wire:model="dateFrom" type="date" class="block w-full border-slate-300 rounded-lg">
+                                <span>to</span>
+                                <input wire:model="dateUntil" type="date" class="block w-full border-slate-300 rounded-lg">
+                            </div>
+                            @error('dateFrom') <span class="text-red-500 text-xs">{{$message}}</span> @enderror
+                            @error('dateUntil') <span class="text-red-500 text-xs">{{$message}}</span> @enderror
+                        </div>
+                    @elseif ($filterBy == 'month')
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">3. Month Range & Year</label>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <select wire:model="monthFrom" class="block w-full border-slate-300 rounded-lg">
+                                    @for ($i = 1; $i <= 12; $i++) <option value="{{ $i }}">{{ date('F', mktime(0, 0, 0, $i, 10)) }}</option> @endfor
+                                </select>
+                                <span>to</span>
+                                <select wire:model="monthUntil" class="block w-full border-slate-300 rounded-lg">
+                                     @for ($i = 1; $i <= 12; $i++) <option value="{{ $i }}">{{ date('F', mktime(0, 0, 0, $i, 10)) }}</option> @endfor
+                                </select>
+                                <input wire:model="selectYear" type="number" class="block w-full border-slate-300 rounded-lg" placeholder="Year">
+                            </div>
+                             @error('monthFrom') <span class="text-red-500 text-xs">{{$message}}</span> @enderror
+                             @error('monthUntil') <span class="text-red-500 text-xs">{{$message}}</span> @enderror
+                             @error('selectYear') <span class="text-red-500 text-xs">{{$message}}</span> @enderror
+                        </div>
+                    @elseif ($filterBy == 'year')
+                         <div>
+                            <label class="block text-sm font-medium text-slate-700">3. Select Year</label>
+                            <input wire:model="selectYear" type="number" class="mt-1 block w-full border-slate-300 rounded-lg" placeholder="e.g., {{ date('Y') }}">
+                            @error('selectYear') <span class="text-red-500 text-xs">{{$message}}</span> @enderror
+                        </div>
+                    @else
+                        <div>
+                            <label class="block text-sm font-medium text-slate-400">3. Details</label>
+                             <div class="mt-1 p-4 border-2 border-dashed border-slate-200 rounded-lg text-center text-slate-400">
+                                <p>Select a period to continue</p>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        <div class="p-6 bg-slate-50 flex justify-end items-center space-x-3 border-t border-slate-200">
+            <button wire:click="handleReset" class="px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50">Reset</button>
+            <button wire:click="generatePreview" class="px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Generate Preview</button>
+            <button wire:click="handlePrint" @if(!$reportData) disabled @endif class="px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed">
+                <i class="fas fa-print mr-2"></i> Print
+            </button>
+        </div>
+    </div>
+    
+    @if ($reportData)
+    <div class="mt-8 bg-white rounded-xl shadow-lg">
+        <div class="p-6 border-b">
+            <h3 class="text-xl font-bold text-slate-800">Report Preview</h3>
+        </div>
+        <div class="p-6">
+            @if($filter == 'item')
+                @include('livewire.reports.item-table', ['data' => $reportData])
+            @else
+                @include('livewire.reports.transaction-table', ['data' => $reportData])
+            @endif
+        </div>
+    </div>
     @endif
-    @if (session('dataSession')->status == 'failed')
-      <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        {{session('dataSession')->message}}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
+
+    @if ($noDataFound)
+    <div class="mt-8 text-center py-16 px-4 bg-white rounded-xl shadow-lg">
+        <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+        <h3 class="mt-2 text-lg font-semibold text-slate-800">No Data Found</h3>
+        <p class="mt-1 text-sm text-slate-500">There are no records matching your filter criteria.</p>
+    </div>
     @endif
-  @endif
-
-  <div class="row">
-    <div class="col-sm-12 col-lg-6">
-      <!-- Collapsable Card Example -->
-      <div class="card shadow mb-4">
-        <!-- Card Header - Accordion -->
-        <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Form Report Data</h6>
-        </div>
-        <div class="card-body">
-          <div class="form-group row align-items-center">
-            <label class="col-sm-3 col-form-label ">What data is needed?</label>
-            <div class="col-sm-9">
-              <select wire:model.live='filter' type="text" class="form-control" {{$filterBy ? 'disabled' : ''}}>
-                <option value="">--Select list data--</option>
-                <option value="item">Items</option>
-                <option value="in">Items In</option>
-                <option value="out">Items Out</option>
-                <option value="damaged">Items Damaged</option>
-              </select>
-            </div>
-          </div>
-
-          {{-- Jika filter sudah dipilih, ini akan muncul --}}
-          @if ($filter)
-            <div class="form-group row align-items-center">
-              <label class="col-sm-3 col-form-label ">Select the time period</label>
-              <div class="col-sm-9">
-                <select wire:model.live='filterBy' type="text" class="form-control" {{$filterBy ? 'disabled' : ''}}>
-                <option value="">--Select period by--</option>
-                <option value="date">Date</option>
-                <option value="month">Month</option>
-                <option value="year">Year</option>
-                </select>
-              </div>
-            </div>
-          @endif
-        </div>
-      </div>
-    </div>
-
-    {{-- Jika filter dan filterBy sudah dipilih, ini akan muncul sesuai filterBy yang dipilih --}}
-    @if ($filterBy && $filter)
-    <div class="col-sm-12 col-lg-6">
-      <!-- Collapsable Card Example -->
-      <div class="card shadow mb-4">
-        <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary"> Filter By</h6>
-        </div>
-        <div class="card-body">
-
-          {{-- Jika filterBy yang dipilih itu date, maka ini yang akan muncul --}}
-          @if ($filterBy == 'date')
-            <div class="row">
-              <div class="col-sm-12 col-lg-6">
-                <div class="form-group">
-                  <label>From date</label>
-                  <input wire:model='dateFrom' type="date" class="form-control">
-                </div>
-              </div>
-              <div class="col-sm-12 col-lg-6">
-                <div class="form-group">
-                  <label>Until date</label>
-                  <input wire:model='dateUntil' type="date" class="form-control">
-                </div>
-              </div>
-            </div>
-          @endif
-
-          {{-- Jika filterBy yang dipilih itu month, maka ini yang akan muncul --}}
-          @if ($filterBy == 'month')
-            <div class="row">
-              <div class="col-sm-12 col-lg-6">
-                <div class="form-group">
-                  <label>From the month</label>
-                  <select wire:model='monthFrom' type="text" class="form-control">
-                    <option value="">--Select Month--</option>
-                    <option value="1">January</option>
-                    <option value="2">February</option>
-                    <option value="3">March</option>
-                    <option value="4">April</option>
-                    <option value="5">May</option>
-                    <option value="6">June</option>
-                    <option value="7">July</option>
-                    <option value="8">August</option>
-                    <option value="9">Sepetember</option>
-                    <option value="10">October</option>
-                    <option value="11">November</option>
-                    <option value="12">December</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-sm-12 col-lg-6">
-                <div class="form-group">
-                  <label>Until the month</label>
-                  <select wire:model='monthUntil' type="text" class="form-control">
-                    <option value="">--Select Month--</option>
-                    <option value="1">January</option>
-                    <option value="2">February</option>
-                    <option value="3">March</option>
-                    <option value="4">April</option>
-                    <option value="5">May</option>
-                    <option value="6">June</option>
-                    <option value="7">July</option>
-                    <option value="8">August</option>
-                    <option value="9">Sepetember</option>
-                    <option value="10">October</option>
-                    <option value="11">November</option>
-                    <option value="12">December</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          @endif
-
-          {{-- Jika filterBy yang dipilih itu month atau year, maka ini yang akan muncul --}}
-          @if ($filterBy == 'month' || $filterBy == 'year')
-            <div class="row">
-              <div class="col-sm-12">
-              <div class="form-group row align-items-center">
-                <label class="col-sm-12 col-lg-3">Input year</label>
-                <div class="col-sm-12 col-lg-9">
-                  <input wire:model='selectYear' type="number" class="form-control" placeholder="input year">
-                </div>
-              </div>
-              </div>
-            </div>
-          @endif
-
-        </div>
-        <div class="card-footer text-center text-lg-right">
-        {{--
-        - wire:click='handleReset' : jika diklik maka akan mengeksekusi method handleReset di komponen
-        ReportComponent.
-        - Begitu juga wire:click='handleCheck' dan wire:click='handlePrint'
-        --}}
-        <button wire:click='handleReset' type="button" class="btn btn-outline-danger"><i
-          class="fas fa-window-restore"></i> Reset</button>
-        <button wire:click='handleCheck' type="button" class="btn btn-outline-primary"><i class="fas fa-check"></i>
-          Check</button>
-        <button wire:click='handlePrint' type="button" class="btn btn-primary btn-success"><i
-          class="fa fa-print"></i> Print</button>
-        </div>
-      </div>
-    </div>
-  @endif
-
-    {{-- Table akan muncul jika data ada dan filternya item --}}
-    @if ($reportData && $filter == 'item')
-    <div class="col-12">
-      <div class="card-body bg-white">
-        <div class="table-responsive">
-          <table class="table table-striped">
-          <thead class="table-dark">
-            <tr>
-            <th scope="col">#</th>
-            <th scope="col">Input At</th>
-            <th scope="col">Code</th>
-            <th scope="col">Category</th>
-            <th scope="col">Name</th>
-            <th scope="col">Quantity</th>
-            <th scope="col">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            @foreach ($reportData as $item)
-          <tr>
-          <th scope="row">{{$no++}}</th>
-          <td>{{ $item->created_at }}</td>
-          <td>{{ $item->code }}</td>
-          <td>{{ $item->category }}</td>
-          <td>{{ $item->name }}</td>
-          <td>{{ $item->quantity }}</td>
-          <td><span
-          class="badge {{$item->status == 'available' ? 'badge-primary' : 'badge-danger'}}">{{ $item->status }}</span>
-          </td>
-          </tr>
-        @endforeach
-          </tbody>
-          <tfoot>
-            <tr>
-            <th scope="col">#</th>
-            <th scope="col">Code</th>
-            <th scope="col">Category</th>
-            <th scope="col">Name</th>
-            <th scope="col">Quantity</th>
-            <th scope="col">Status</th>
-            <th scope="col">Input At</th>
-            </tr>
-          </tfoot>
-          </table>
-        </div>
-      </div>
-    </div>
-  @endif
-
-    {{-- Table akan muncul jika data ada dan filternya selain item yaitu in, out atau damaged --}}
-    @if ($reportData && $filter != 'item')
-    <div class="col-12">
-      <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-striped">
-        <thead class="table-dark">
-          <tr>
-          <th scope="col">#</th>
-          <th scope="col">Input At</th>
-          <th scope="col">Category</th>
-          <th scope="col">Name</th>
-          <th scope="col">Type</th>
-          <th scope="col">Quantity</th>
-          <th scope="col">Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach ($reportData as $item)
-        <tr>
-        <th scope="row">{{$no++}}</th>
-        <td>{{ $item->created_at }}</td>
-        <td>{{ $item->item->category }}</td>
-        <td>{{ $item->item->name }}</td>
-        <td><span
-        class="badge {{ ($item->type == 'in') ? 'badge-primary' : (($item->type == 'out') ? 'badge-warning' : 'badge-danger')}}">{{ $item->type }}</span>
-        </td>
-        <td>{{ $item->quantity }}</td>
-        <td>{{ $item->description }}</td>
-        </tr>
-      @endforeach
-        </tbody>
-        <tfoot>
-          <tr>
-          <th scope="col">#</th>
-          <th scope="col">Category</th>
-          <th scope="col">Name</th>
-          <th scope="col">Type</th>
-          <th scope="col">Quantity</th>
-          <th scope="col">Description</th>
-          <th scope="col">Input At</th>
-          </tr>
-        </tfoot>
-        </table>
-      </div>
-      </div>
-    </div>
-  @endif
-  </div>
 </div>
+
+@push('scripts')
+<script>
+    // Listener untuk membuka tab baru saat event dari Livewire diterima
+    document.addEventListener('livewire:initialized', () => {
+        @this.on('open-new-tab', ({ url }) => {
+            window.open(url, '_blank');
+        });
+    });
+</script>
+@endpush
