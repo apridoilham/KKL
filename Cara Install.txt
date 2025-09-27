@@ -1,0 +1,51 @@
+Cara install Inventory Systems (Codingasik Sistem Inventaris) :
+
+1. Pastikan aktifkan mysql dan apache di Xampp atau Laragon. Atau jika yang menggunakan Linux dan Mac OS menyesuaikan
+
+2. Buat database baru namanya bebas, atau misal "cosik_sistem_inventaris", pilih collationnya utfmb4_general_ci (opsional)
+
+3. Ekstrak projek dimanapun. Atau bisa di folder Xampp yaitu didalam "htdocs", atau jika Laragon bisa didalam folder "www". Pastikan pilih opsi "Extract Here" saat mengekstrak projek atau jangan sampai ada folder didalam folder projek
+
+4. Buka projek dengan Text editor bisa VS Code (recommended), sublime text dll
+
+5. Buka file ".env" didalam root projek (file terluar) dan ubah :
+- #APP_ENV=local menjadi APP_ENV=local
+- #APP_DEBUG=true menjadi APP_DEBUG=true
+- APP_ENV=production menjadi #APP_ENV=production
+- APP_DEBUG=false menjadi #APP_DEBUG=false
+
+Pengubahan diatas agar error bisa terdeteksi atau masuk ke development mode. Jika mau mencoba langsung, lewati pengubahan diatas dan lanjut ubah dibawah ini :
+
+- DB_DATABASE=cosik_sistem_inventaris
+- DB_USERNAME=root
+- DB_PASSWORD=
+
+Database disesuaikan dengan nama database yang dibuat tadi begitu juga username dan password. Jika default biasanya root dan password kosong.
+
+6. Setelah itu migrasi file yang ada di database/migrations. Disitu ada 3 file yitu untuk membuat tabel users, items dan transaction ke dalam database. Nah caranya dengan ketik : "php artisan migrate" (tanpa petik) didalam terminal VS Code
+
+7. Selanjutnya buat data dummy (data sementara untuk percobaan) kedalam table yang telah dibuat yaitu dengan seed didalam file database/seeders. Disitu ada 4 file yang mana DatabaseSeeder.php adalah file utama untuk menjalankan 3 file lainnya. Lalu jalankan juga diterminal dengan cara ketik : "php artisan db:seed" tanpa tanda petik
+
+8. Untuk memastikan bisa buka databasenya bebas bisa via phpmyadmin, terminal dll. Dan pastikan ada table dan ada data yang terinsert didalam databasenya
+
+9. Untuk memastikan tidak error, bisa jalankan terlebih dahulu di terminal : 
+
+php artisan cache:clear
+php artisan config:clear
+php artisan view:clear
+php artisan route:clear
+php artisan storage:link
+
+10. Lalu untuk menjalankan webnya bisa ketik diterminal : "php artisan serve" (tanpa tanda petik). Ini akan menjalankan Local Development Server. Lalu akan ada tulisan misal Server running on [http://127.0.0.1:8000]. Nah akses "http://127.0.0.1:8000" didalam browser atau cukup ketik tombol ctrl + klik kiri, maka otomatis akan membuka browser
+
+11. Lalu untuk loginnya bisa dengan
+- username : admin
+- password : admin123
+
+Semua bisa diubah username dan password untuk versi Lite, didalam dashboard Homepage
+
+12. Setelah login harusnya akan muncul tampilan homepage dan menu lainnya. Dan bisa diuji satu persatu
+
+13. Source code ini saya tujukan untuk pemula yang ingin belajar. Jadi bukan hanya yang penting muncul, tapi yang terpenting adalah pelajari cara kerja dari Laravel dan Livewire untuk membuat sebuah web app
+
+14. Selamat belajar

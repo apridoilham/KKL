@@ -1,0 +1,86 @@
+1. Pastikan node js, npm dan composer terinstall dengan :
+
+node -v
+npm -v
+composer -v
+
+2. Install Laravel :
+
+composer create-project laravel/laravel nama-proyek
+cd nama-proyek
+
+3. Install dependecy tambahan untuk integrasi vite
+
+npm install
+
+4. Install livewire :
+
+composer require livewire/livewire
+php artisan livewire:publish
+
+5. Masuk ke vite.config.js dan ubah configurasinya. Livewire diinput ke refresh agar HMR (Hot Mudule Reload) aktif
+
+6. Membuat Komponen Livewire :
+
+php artisan make:livewire NamaKomponen
+
+7. Jalankan Development Server
+
+php artisan serve
+npm install
+npm run dev
+
+8. Membuat layout :
+
+php artisan livewire:layout
+
+akan ada blade file otomatis di : resources/views/components/layouts/app.blade.php. Detailnya bisa cek di https://livewire.laravel.com/docs/quickstart#create-a-template-layout
+
+9. lifecycle hooks 
+
+a. mount()
+Dijalankan sekali saat komponen pertama kali dibuat (mirip seperti constructor di PHP).
+
+b. render()
+Dipanggil setiap kali komponen harus dirender ulang, misalnya setelah properti diubah.
+
+c. updated()
+Dipanggil setiap kali properti komponen diperbarui.
+
+d. updating()
+Dipanggil sebelum properti diperbarui.
+
+e. updated[PropertyName]()
+Dipanggil setelah properti tertentu diperbarui.
+
+f. updating[PropertyName]()
+Dipanggil sebelum properti tertentu diperbarui.
+
+g. destroy()
+Dipanggil saat komponen dihapus dari DOM.
+
+Bisa dilihat detailnya di : https://livewire.laravel.com/docs/lifecycle-hooks#mount
+
+
+10 Setup production
+
+a. Link Storage: Jalankan perintah untuk membuat symbolic link antara folder storage dan public agar file yang diunggah dapat diakses publik.
+
+php artisan storage:link
+
+b. Clear dan Refresh Cache: 
+
+php artisan optimize:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+c. Build Assets dengan Vite
+
+npm run build
+
+d. Perbarui Environment (.env)
+
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://example.com
