@@ -1,78 +1,39 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-
+<html lang="id">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ $data['title'] ?? 'Sistem Inventaris' }}</title>
 
-    <title>{{ $data['title'] ?? 'Inventory System' }}</title>
     <link rel="icon" href="{{asset('assets/img/box.png')}}" type="image/svg+xml">
+    
     <link href="{{asset('assets/vendor/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
-    <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet">
-
-    <link href="{{asset('assets/css/sb-admin-2.min.css')}}" rel="stylesheet">
-
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-
-<body id="page-top">
-    <div id="wrapper">
-
+<body class="bg-slate-100 font-sans">
+    <div x-data="{ sidebarOpen: window.innerWidth > 768 }" class="flex h-screen bg-slate-100">
+        
         @include('components.partials.sidebar')
 
-        <div id="content-wrapper" class="d-flex flex-column">
+        <div class="flex-1 flex flex-col overflow-hidden">
+            @include('components.partials.topbar')
+            
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100">
+                {{ $slot }}
+            </main>
 
-            <div id="content" class="bg-slate-50">
-
-                @include('components.partials.topbor')
-
-                {{$slot}}
-
-            </div>
             @include('components.partials.footer')
-
-        </div>
-        </div>
-    <a class="scroll-to-top rounded" href="#page-top">
-        <i class="fas fa-angle-up"></i>
-    </a>
-
-    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
-                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
-                </div>
-                <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a href="/logout" class="btn btn-primary" >Logout</a>
-                </div>
-            </div>
         </div>
     </div>
-
-    <script src="{{asset('assets/vendor/jquery/jquery.min.js')}}"></script>
-    <script src="{{asset('assets/vendor/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
-
-    <script src="{{asset('assets/vendor/jquery-easing/jquery.easing.min.js')}}"></script>
-
-    <script src="{{asset('assets/js/sb-admin-2.min.js')}}"></script>
-
     
     @livewireScripts
     @stack('scripts')
 </body>
-
 </html>

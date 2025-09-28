@@ -9,26 +9,19 @@ use Livewire\Component;
 
 class LoginComponent extends Component
 {
-    
     public $data, $checkData;
     public $username, $password,$name, $securityQuestion, $securityAnswer, $newPassword, $confPass;
-
     public $isModalOpen = false;
     public $isVerified, $isUserFound;
-    
 
     public function mount(){
-        
         $this->data = [
             'title' => 'Login Page',
             'urlPath' => 'login'
         ];
-
-        // Cek dulu apakah ada data di tabel users ketika web diload pertama kali
         $this->checkData = User::count();
     }
 
-    // Menggabungkan logika login dan simpan data pertama kali
     public function submit(){
         if($this->checkData > 0){
             $this->loginProcess();
@@ -38,7 +31,6 @@ class LoginComponent extends Component
     }
 
     private function saveData(){
-
         $this->validate([
             'username' => 'required|string|min:3',
             'password' => 'required|string|min:6',
@@ -47,33 +39,22 @@ class LoginComponent extends Component
             'securityAnswer' => 'required|string',
         ]);
 
-        if($this->checkData != 0){
-            session()->flash('dataSession', (object) [
-                'status' => 'failed',
-                'message' => 'The data is already there. Ensure login with correct username and password'
-            ]);
-        }else{
-            User::create([
-                'username' => $this->username,
-                'password' => bcrypt($this->password),
-                'name' => $this->name,
-                'security_question' => $this->securityQuestion,
-                'security_answer' => bcrypt($this->securityAnswer),
-                'role' => 'admin', // User pertama otomatis menjadi admin
-            ]);
+        User::create([
+            'username' => $this->username,
+            'password' => Hash::make($this->password),
+            'name' => $this->name,
+            'security_question' => $this->securityQuestion,
+            'security_answer' => Hash::make($this->securityAnswer),
+            'role' => 'admin',
+        ]);
 
-            $this->checkData = User::count();
-            $this->reset(['username', 'password', 'name', 'securityQuestion', 'securityAnswer']);
+        $this->checkData = User::count();
+        $this->reset(['username', 'password', 'name', 'securityQuestion', 'securityAnswer']);
 
-            session()->flash('dataSession', (object) [
-                'status' => 'success',
-                'message' => 'Data is saved successfully. Login to continue'
-            ]);
-        }
+        session()->flash('dataSession', ['status' => 'success', 'message' => 'Akun Admin berhasil dibuat. Silakan login.']);
     }
 
     private function loginProcess(){
-
         $this->validate([
             'username' => 'required|string',
             'password' => 'required|string',
@@ -82,10 +63,7 @@ class LoginComponent extends Component
         $user = User::where('username', $this->username)->first();
 
         if(!$user || !Hash::check($this->password, $user->password)) {
-            return session()->flash('dataSession', (object) [
-                'status' => 'failed',
-                'message' => 'Incorrect username or password'
-            ]);
+            return session()->flash('dataSession', ['status' => 'failed', 'message' => 'Username atau password salah.']);
         }
         
         Auth::login($user); 
@@ -93,17 +71,13 @@ class LoginComponent extends Component
     }
 
     public function verifyData(){
-        $this->validate([
-            'username' => 'required|string',
-        ]);
-
+        $this->validate(['username' => 'required|string']);
         $user = User::where('username', $this->username)->first();
 
-        if(!$user)
-        return session()->flash('dataSession2', (object) [
-            'status' => 'failed',
-            'message' => 'Incorrect username or password'
-        ]);
+        if(!$user) {
+            return session()->flash('dataSession2', ['status' => 'failed', 'message' => 'Username tidak ditemukan.']);
+        }
+        
         $this->isUserFound = true;
         $this->securityQuestion = $user->security_question;
 
@@ -111,37 +85,21 @@ class LoginComponent extends Component
             if (Hash::check($this->securityAnswer, $user->security_answer)) {
                 $this->isVerified = true;
             } else {
-                return session()->flash('dataSession2', (object) [
-                    'status' => 'failed',
-                    'message' => 'Failed. Security answer is wrong'
-                ]);
+                return session()->flash('dataSession2', ['status' => 'failed', 'message' => 'Jawaban keamanan salah.']);
             }
         }
     }
 
     public function changePassword(){
         $this->validate([
-            'newPassword' => 'required|string',
+            'newPassword' => 'required|string|min:6',
             'confPass' => 'required|string|same:newPassword',
         ]);
 
-        if($this->newPassword !== $this->confPass)
-        return session()->flash('dataSession2', (object) [
-            'status' => 'failed',
-            'message' => 'Confirmation password is not same'
-        ]);
-
-        User::where('username','=', $this->username)
-            ->update([
-                'password' => bcrypt($this->newPassword)
-            ]);
-
-        session()->flash('dataSession2', (object) [
-            'status' => 'success',
-            'message' => 'Password changed successfully'
-        ]);
-
+        User::where('username','=', $this->username)->update(['password' => Hash::make($this->newPassword)]);
+        session()->flash('dataSession2', ['status' => 'success', 'message' => 'Password berhasil diubah.']);
         $this->reset(['newPassword', 'confPass', 'isVerified', 'isUserFound', 'username', 'securityQuestion', 'securityAnswer']);
+        $this->isModalOpen = false;
     }
 
     public function render()

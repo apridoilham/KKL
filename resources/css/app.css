@@ -11,3 +11,13 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+/* Custom styles for user avatar */
+.user-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #fff;
+    background-color: #4f46e5; /* Indigo color */
+    border-radius: 9999px; /* Full circle */
+}

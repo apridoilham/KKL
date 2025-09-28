@@ -6,11 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Item extends Model
 {
-    /* Ini untuk mengatur field table mana yang boleh diisi */
+    /* PERBAIKAN DI SINI: Tambahkan 'quantity' dan 'status' */
     protected $fillable = [
         'code',
         'category',
         'name',
+        'quantity',
+        'status',
     ];
 
     /* Ini untuk membuat relasi one to many ke table transaction */

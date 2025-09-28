@@ -9,14 +9,12 @@ use Livewire\WithPagination;
 class ItemComponent extends Component
 {
     use WithPagination;
-    // Mengganti tema pagination dari 'bootstrap' ke view kustom kita
     protected $paginationTheme = 'tailwind-custom';
 
     public $data;
-    public $search = ''; // Variabel untuk menyimpan kata kunci pencarian
-    public $perPage = 10; // Jumlah data per halaman
+    public $search = '';
+    public $perPage = 10;
     public $page;
-    public $pageUrl = 'item';
 
     public $id, $code, $category, $name;
 
@@ -31,7 +29,7 @@ class ItemComponent extends Component
     public function mount()
     {
         $this->data = [
-            'title' => 'Manage Items',
+            'title' => 'Manajemen Barang',
             'urlPath' => 'item'
         ];
     }
@@ -60,18 +58,28 @@ class ItemComponent extends Component
             'code' => 'nullable|string|max:50',
         ]);
 
-        Item::updateOrCreate(
-            ['id' => $this->id],
-            [
+        if ($this->id) {
+            $item = Item::findOrFail($this->id);
+            $item->update([
                 'code' => $this->code,
                 'category' => $this->category,
                 'name' => $this->name,
-            ]
-        );
+            ]);
+            $message = 'Barang berhasil diperbarui.';
+        } else {
+            Item::create([
+                'code' => $this->code,
+                'category' => $this->category,
+                'name' => $this->name,
+                'quantity' => 0,
+                'status' => 'out',
+            ]);
+            $message = 'Barang baru berhasil dibuat.';
+        }
         
-        session()->flash('dataSession', (object) [
+        session()->flash('dataSession', [
             'status' => 'success',
-            'message' => $this->id ? 'Item updated successfully.' : 'Item created successfully'
+            'message' => $message
         ]);
 
         $this->isModalOpen = false;
@@ -89,25 +97,24 @@ class ItemComponent extends Component
 
     public function delete($id){
         if (auth()->user()->role !== 'admin') {
-            session()->flash('dataSession', (object) [
+            session()->flash('dataSession', [
                 'status' => 'failed',
-                'message' => 'You are not authorized to perform this action.'
+                'message' => 'Anda tidak memiliki otorisasi untuk melakukan aksi ini.'
             ]);
             return;
         }
 
         try {
             Item::findOrFail($id)->delete();
-            session()->flash('dataSession', (object) [
+            session()->flash('dataSession', [
                 'status' => 'success',
-                'message' => 'Data deleted successfully'
+                'message' => 'Data berhasil dihapus.'
             ]);
         } catch (\Exception $e) {
-            session()->flash('dataSession', (object) [
+            session()->flash('dataSession', [
                 'status' => 'failed',
-                'message' => 'Cannot delete items because they are related to other transactions.'
+                'message' => 'Tidak dapat menghapus barang karena terhubung dengan transaksi lain.'
             ]);
-        
         }
     }
 
@@ -117,7 +124,7 @@ class ItemComponent extends Component
             ->where('code', 'like', '%'.$this->search.'%')
             ->orWhere('category', 'like', '%'.$this->search.'%')
             ->orWhere('name', 'like', '%'.$this->search.'%')
-            ->latest() // Mengurutkan dari yang terbaru
+            ->latest()
             ->paginate($this->perPage);
 
         return view('livewire.item',[

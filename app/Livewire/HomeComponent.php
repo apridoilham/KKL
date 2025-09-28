@@ -13,20 +13,23 @@ class HomeComponent extends Component
 {
     public $data;
 
-    public $totalItems, $totalIn, $totalOut, $totalDamaged, $totalUsers;
-    public $categories = [];
-    public $quantities = [];
-    public $stockTrend = [];
-    
-    // Palet warna baru untuk grafik
-    public $pieChartColors = ['#4A55A2', '#7895CB', '#A0BFE0', '#C5DFF8'];
-    public $doughnutChartColors = ['#28a745', '#ffc107', '#dc3545'];
+    // Data Statistik Utama
+    public $totalItems, $totalIn, $totalOut, $totalDamaged, $totalUsers, $totalStock;
 
+    // Data Grafik
+    public $categoryLabels = [], $categoryData = [];
+    public $trendLabels = ['Masuk', 'Keluar', 'Rusak'], $trendData = [];
+    public $topStockLabels = [], $topStockData = [];
+    public $chartPalette1 = ['#4A55A2', '#7895CB', '#A0BFE0', '#C5DFF8', '#F0F0F0'];
+    
+    // Properti untuk Modal
     public $isModalOpen = false;
     public $isModalOpenData = false;
     
-    public $checkData, $isVerified;
-    public $username, $password, $newPassword, $confPass, $name, $securityQuestion, $securityAnswer;
+    // Properti untuk Form
+    public $name, $username;
+    public $password, $newPassword, $confPass;
+    public $confirmationPassword = '';
 
     public function mount()
     {
@@ -34,99 +37,91 @@ class HomeComponent extends Component
             'title' => 'Dashboard',
             'urlPath' => 'home'
         ];
-        // Hitung total items
+
+        $this->updateStatistics();
+        $this->updateChartData();
+
+        $user = auth()->user();
+        $this->name = $user->name;
+        $this->username = $user->username;
+    }
+
+    public function updateStatistics()
+    {
         $this->totalItems = Item::count();
         $this->totalUsers = User::count();
-
-        // Hitung total transaksi berdasarkan tipe
+        $this->totalStock = Item::sum('quantity');
         $this->totalIn = Transaction::where('type', 'in')->sum('quantity');
         $this->totalOut = Transaction::where('type', 'out')->sum('quantity');
         $this->totalDamaged = Transaction::where('type', 'damaged')->sum('quantity');
-
-        $this->updateChartData();
     }
 
-    public function updateChartData(){
-        $data = Item::select('category', DB::raw('SUM(quantity) as total_quantity'))
+    public function updateChartData()
+    {
+        $categoryInfo = Item::select('category', DB::raw('SUM(quantity) as total_quantity'))
             ->groupBy('category')
             ->get();
-
-        $this->categories = $data->pluck('category')->map(fn($cat) => $cat ?? 'Uncategorized');
-        $this->quantities = $data->pluck('total_quantity');
-        
-        if($this->categories->isEmpty()){
-            $this->categories = ['No Data'];
-            $this->quantities = [0];
+        $this->categoryLabels = $categoryInfo->pluck('category')->map(fn($cat) => $cat ?? 'Tanpa Kategori')->toArray();
+        $this->categoryData = $categoryInfo->pluck('total_quantity')->toArray();
+        if (empty($this->categoryLabels)) {
+            $this->categoryLabels = ['Belum Ada Data'];
+            $this->categoryData = [0];
         }
 
-        $this->stockTrend = [
-            'in_quantity' => $this->totalIn,
-            'out_quantity' => $this->totalOut,
-            'damaged_quantity' => $this->totalDamaged,
-        ];
+        $this->trendData = [$this->totalIn, $this->totalOut, $this->totalDamaged];
+        if (array_sum($this->trendData) == 0) {
+            $this->trendData = [0, 0, 0];
+        }
+        
+        $topItems = Item::orderBy('quantity', 'desc')->take(5)->get();
+        $this->topStockLabels = $topItems->pluck('name')->toArray();
+        $this->topStockData = $topItems->pluck('quantity')->toArray();
     }
     
-    public function checkUser(){
+    public function changePassword()
+    {
         $this->validate([
-            'username' => 'required|string',
-            'password' => 'required|string',
-        ]);
-
-        $user = User::where('username', $this->username)->first();
-
-        if(!$user || !Hash::check($this->password, $user->password)) {
-             return session()->flash('dataSession', (object) [
-                'status' => 'failed',
-                'message' => 'Incorrect username or password'
-            ]);
-        }
-        
-        $this->isVerified = true;
-        $this->name = $user->name;
-        $this->securityQuestion = $user->security_question;
-    }
-
-    public function changePassword(){
-        $this->validate([
+            'password' => 'required',
             'newPassword' => 'required|min:6',
             'confPass' => 'required|same:newPassword',
         ]);
-
-        User::where('username','=', $this->username)
-            ->update(['password' => bcrypt($this->newPassword)]);
-
-        session()->flash('dataSession', (object) [
-            'status' => 'success',
-            'message' => 'Password changed successfully'
-        ]);
         
-        $this->reset(['newPassword', 'confPass', 'password', 'isVerified', 'username']);
+        $user = auth()->user();
+
+        if (!Hash::check($this->password, $user->password)) {
+            session()->flash('dataSession', ['status' => 'failed', 'message' => 'Password saat ini salah.']);
+            return;
+        }
+
+        $user->update(['password' => Hash::make($this->newPassword)]);
+
+        session()->flash('dataSession', ['status' => 'success', 'message' => 'Password berhasil diperbarui.']);
+        
+        $this->reset(['password', 'newPassword', 'confPass']);
         $this->isModalOpen = false;
     }
     
-    public function changeData(){
+    public function changeData()
+    {
         $this->validate([
             'name' => 'required|string',
-            'securityQuestion' => 'required|string',
-            'securityAnswer' => 'required|string',
+            'confirmationPassword' => 'required|string',
         ]);
+        
+        $user = auth()->user();
+        
+        if (!Hash::check($this->confirmationPassword, $user->password)) {
+            session()->flash('dataSession', ['status' => 'failed', 'message' => 'Password konfirmasi yang Anda masukkan salah.']);
+            $this->addError('confirmationPassword', 'Password salah.');
+            return;
+        }
 
-        User::where('username','=', auth()->user()->username)
-            ->update([
-                'name' => $this->name,
-                'security_question' => $this->securityQuestion,
-                'security_answer' => bcrypt($this->securityAnswer),
-            ]);
+        $user->update(['name' => $this->name]);
 
-        session()->flash('dataSession', (object) [
-            'status' => 'success',
-            'message' => 'Data changed successfully'
-        ]);
-
-        $this->reset(['name', 'securityQuestion', 'securityAnswer']);
+        session()->flash('dataSession', ['status' => 'success', 'message' => 'Nama Anda berhasil diperbarui.']);
+        
         $this->isModalOpenData = false;
-        // Refresh component data
-        return redirect()->route('home');
+        $this->reset('confirmationPassword');
     }
 
     public function render()

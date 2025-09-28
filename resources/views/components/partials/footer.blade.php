@@ -1,9 +1,5 @@
-<!-- Footer -->
-<footer class="sticky-footer bg-white">
-  <div class="container my-auto">
-    <div class="copyright text-center my-auto">
-      <span>Copyright &copy; <a href="https://codingasikacademy.com">Coding Asik Academy</a> 2025</span>
+<footer class="bg-slate-50 p-4">
+    <div class="text-center text-sm text-slate-500">
+        <span>Hak Cipta &copy; Sistem Inventaris {{ date('Y') }}</span>
     </div>
-  </div>
 </footer>
-<!-- End of Footer -->
