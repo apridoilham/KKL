@@ -1,136 +1,37 @@
 @section('title', $data['title'] ?? 'Cetak Laporan')
-<div class="row">
-	@if (session()->has('dataSession'))
-		@if (session('dataSession')->status == 'failed')
-			<div class="row d-flex justify-content-center w-100 mt-4">
-				<div class="col-4 text-center">
-					<div class="alert alert-danger alert-dismissible fade show" role="alert">
-						{{session('dataSession')->message}}
-						<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-							<span aria-hidden="true">&times;</span>
-						</button>
-					</div>
-					<a class="btn btn-success" href='/report'> Back to Report Page</a>
-				</div>
-			</div>
-		@endif
-	@endif
-	@if ($reportData && session('filter') == 'item')
-		<div class="col-12 card p-4">
-			<div class="card-header">
-				<h4 class="text-center">{{$titleData}}</h4>
-			</div>
-			<div class="card-body bg-white">
-				<div class="table-responsive">
-					<table class="table table-bordered">
-						<thead class="table-dark">
-							<tr>
-								<th scope="col">#</th>
-								<th scope="col">Input At</th>
-								<th scope="col">Code</th>
-								<th scope="col">Category</th>
-								<th scope="col">Name</th>
-								<th scope="col">Quantity</th>
-								<th scope="col">Status</th>
-							</tr>
-						</thead>
-						<tbody>
-							@foreach ($reportData as $item)
-								<tr>
-									<th scope="row">{{$no++}}</th>
-									<td>{{ $item->created_at }}</td>
-									<td>{{ $item->code }}</td>
-									<td>{{ $item->category }}</td>
-									<td>{{ $item->name }}</td>
-									<td>{{ $item->quantity }}</td>
-									<td><span
-											class="badge {{$item->status == 'available' ? 'badge-primary' : 'badge-danger'}}">{{ $item->status }}</span>
-									</td>
-								</tr>
-							@endforeach
-						</tbody>
-						<tfoot>
-							<tr>
-								<th scope="col">#</th>
-								<th scope="col">Code</th>
-								<th scope="col">Category</th>
-								<th scope="col">Name</th>
-								<th scope="col">Quantity</th>
-								<th scope="col">Status</th>
-								<th scope="col">Input At</th>
-							</tr>
-						</tfoot>
-					</table>
-				</div>
-			</div>
-			<div class="card-footer text-right">
-				<p>Date : <?= date("d-m-Y"); ?></p>
-			</div>
-		</div>
-	@endif
+<div class="bg-white font-sans p-4 md:p-8">
 
-	@if ($reportData && session('filter') != 'item')
-		<div class="col-12 card p-4">
-			<div class="card-header">
-				<h4 class="text-center">{{$titleData }}</h4>
-			</div>
-			<div class="card-body">
-				<div class="table-responsive">
-					<table class="table table-bordered">
-						<thead class="table-dark">
-							<tr>
-								<th scope="col">#</th>
-								<th scope="col">Input At</th>
-								<th scope="col">Category</th>
-								<th scope="col">Name</th>
-								<th scope="col">Type</th>
-								<th scope="col">Quantity</th>
-								<th scope="col">Description</th>
-							</tr>
-						</thead>
-						<tbody>
-							@foreach ($reportData as $item)
-								<tr>
-									<th scope="row">{{$no++}}</th>
-									<td>{{ $item->created_at }}</td>
-									<td>{{ $item->item->category }}</td>
-									<td>{{ $item->item->name }}</td>
-									<td><span
-											class="badge {{ ($item->type == 'in') ? 'badge-primary' : (($item->type == 'out') ? 'badge-warning' : 'badge-danger')}}">{{ $item->type }}</span>
-									</td>
-									<td>{{ $item->quantity }}</td>
-									<td>{{ $item->description }}</td>
-								</tr>
-							@endforeach
-						</tbody>
-						<tfoot>
-							<tr>
-								<th scope="col">#</th>
-								<th scope="col">Category</th>
-								<th scope="col">Name</th>
-								<th scope="col">Type</th>
-								<th scope="col">Quantity</th>
-								<th scope="col">Description</th>
-								<th scope="col">Input At</th>
-							</tr>
-						</tfoot>
-					</table>
-				</div>
-			</div>
-			<div class="card-footer text-right">
-				<p>Date : <?= date("d-m-Y"); ?></p>
-			</div>
-		</div>
-	@endif
+    @if (session()->has('dataSession'))
+        <div class="max-w-4xl mx-auto text-center p-8 border-2 border-dashed rounded-lg">
+            <h2 class="text-xl font-bold text-red-600">Terjadi Kesalahan</h2>
+            <p class="text-slate-600 mt-2">{{ session('dataSession')['message'] }}</p>
+            <a href="/report" class="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white rounded-lg">Kembali ke Halaman Laporan</a>
+        </div>
+    @elseif ($reportData && $reportData->isNotEmpty())
+        <div class="max-w-5xl mx-auto">
+            <header class="text-center mb-8 pb-4 border-b">
+                <h1 class="text-3xl font-bold text-slate-800">{{ $titleData }}</h1>
+                <p class="text-slate-500">Dicetak pada: {{ now()->format('d F Y, H:i') }}</p>
+            </header>
 
-	@if (!session()->has('dataSession'))
-		<script>
-			window.onload = function () {
-				setTimeout(() => {
-					window.print();
-				}, 1500);
-			}
-		</script>
-	@endif
+            <main>
+                @if($filter == 'item')
+                    @include('livewire.reports.item-table', ['data' => $reportData])
+                @else
+                    @include('livewire.reports.transaction-table', ['data' => $reportData])
+                @endif
+            </main>
 
+            <footer class="mt-12 text-center text-sm text-slate-500">
+                <p>Sistem Inventaris &copy; {{ date('Y') }}</p>
+            </footer>
+        </div>
+
+        <script>
+            // Script untuk otomatis memicu dialog print
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() { window.print(); }, 1000);
+            });
+        </script>
+    @endif
 </div>

@@ -2,56 +2,66 @@
 
 namespace App\Livewire;
 
-use App\Models\Item;
-use App\Models\Transaction;
+use App\Traits\BuildsReportQuery; // Menggunakan Trait baru
+use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 
 class ReportPrintComponent extends Component
 {
-    public $reportData;
-    public $titleData;
-    public $data;
+    use BuildsReportQuery; // Mengaktifkan Trait
 
-    public function mount()
+    public $reportData;
+    public string $titleData = 'Laporan Inventaris';
+    public array $data;
+    public string $filter, $filterBy;
+    public array $params;
+
+    public function mount(): void
     {
         $this->data = [
             'title' => 'Cetak Laporan',
             'urlPath' => 'report'
         ];
 
-        $filter = session('filter');
-        $filterBy = session('filterBy');
+        // Mengambil data dari request URL, bukan session
+        $requestData = request()->query();
 
-        $query = null;
+        // Validasi input dari query string
+        $validator = Validator::make($requestData, [
+            'filter' => 'required|in:item,in,out,damaged',
+            'filterBy' => 'required|in:date,month,year',
+            'dateFrom' => 'required_if:filterBy,date|date',
+            'dateUntil' => 'required_if:filterBy,date|date',
+            'monthFrom' => 'required_if:filterBy,month|integer',
+            'monthUntil' => 'required_if:filterBy,month|integer',
+            'selectYear' => 'required_if:filterBy,month,year|integer',
+        ]);
 
-        if ($filter == 'item') {
-            $query = Item::query();
-        } else {
-            $query = Transaction::with('item')->where('type', $filter);
+        if ($validator->fails()) {
+            // Jika validasi gagal, set reportData menjadi null
+            $this->reportData = null;
+            session()->flash('dataSession', ['status' => 'failed', 'message' => 'Parameter laporan tidak valid.']);
+            return;
         }
+        
+        $validated = $validator->validated();
 
-        if ($filterBy == 'date') {
-            $query->whereBetween('created_at', [session('dateFrom'), session('dateUntil')]);
-        } elseif ($filterBy == 'month') {
-            $query->whereYear('created_at', session('selectYear'))
-                ->whereMonth('created_at', '>=', session('monthFrom'))
-                ->whereMonth('created_at', '<=', session('monthUntil'));
-        } elseif ($filterBy == 'year') {
-            $query->whereYear('created_at', session('selectYear'));
-        }
+        $this->filter = $validated['filter'];
+        $this->filterBy = $validated['filterBy'];
+        $this->params = $validated;
 
-        $this->reportData = $query->orderBy('created_at', 'desc')->get();
+        // Memanggil metode dari Trait
+        $this->reportData = $this->buildReportQuery($this->filter, $this->filterBy, $this->params)->get();
 
         if ($this->reportData->isEmpty()) {
             session()->flash('dataSession', ['status' => 'failed', 'message' => 'Tidak ada data yang ditemukan untuk dicetak.']);
         }
         
-        switch ($filter) {
+        switch ($this->filter) {
             case 'item': $this->titleData = 'Laporan Data Barang'; break;
-            case 'in': $this->titleData = 'Laporan Data Barang Masuk'; break;
-            case 'out': $this->titleData = 'Laporan Data Barang Keluar'; break;
-            case 'damaged': $this->titleData = 'Laporan Data Barang Rusak'; break;
-            default: $this->titleData = 'Laporan Inventaris'; break;
+            case 'in': $this->titleData = 'Laporan Barang Masuk'; break;
+            case 'out': $this->titleData = 'Laporan Barang Keluar'; break;
+            case 'damaged': $this->titleData = 'Laporan Barang Rusak'; break;
         }
     }
 

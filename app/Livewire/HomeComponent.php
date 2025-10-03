@@ -11,81 +11,105 @@ use Livewire\Component;
 
 class HomeComponent extends Component
 {
-    public $data;
+    // Properti untuk data halaman
+    public array $data;
 
-    // Data Statistik Utama
-    public $totalItems, $totalIn, $totalOut, $totalDamaged, $totalUsers, $totalStock;
+    // Properti untuk statistik utama
+    public int $totalItems = 0, $totalIn = 0, $totalOut = 0, $totalDamaged = 0, $totalUsers = 0, $totalStock = 0;
 
-    // Data Grafik
-    public $categoryLabels = [], $categoryData = [];
-    public $trendLabels = ['Masuk', 'Keluar', 'Rusak'], $trendData = [];
-    public $topStockLabels = [], $topStockData = [];
-    public $chartPalette1 = ['#4A55A2', '#7895CB', '#A0BFE0', '#C5DFF8', '#F0F0F0'];
-    
-    // Properti untuk Modal
-    public $isModalOpen = false;
-    public $isModalOpenData = false;
-    
-    // Properti untuk Form
-    public $name, $username;
-    public $password, $newPassword, $confPass;
-    public $confirmationPassword = '';
+    // Properti untuk data grafik
+    public array $categoryLabels = [], $categoryData = [];
+    public array $trendLabels = ['Masuk', 'Keluar', 'Rusak'], $trendData = [];
+    public array $topStockLabels = [], $topStockData = [];
+    public array $chartPalette1 = ['#4A55A2', '#7895CB', '#A0BFE0', '#C5DFF8', '#F0F0F0'];
 
-    public function mount()
+    // Properti untuk manajemen modal (pop-up)
+    public bool $isModalOpen = false;
+    public bool $isModalOpenData = false;
+
+    // Properti untuk form binding
+    public string $name = '', $username = '';
+    public ?string $password = null, $newPassword = null, $confPass = null;
+    public string $confirmationPassword = '';
+
+    /**
+     * Inisialisasi komponen saat pertama kali dimuat.
+     */
+    public function mount(): void
     {
         $this->data = [
             'title' => 'Dashboard',
             'urlPath' => 'home'
         ];
 
-        $this->updateStatistics();
-        $this->updateChartData();
+        $this->loadInitialData();
 
         $user = auth()->user();
         $this->name = $user->name;
         $this->username = $user->username;
     }
 
-    public function updateStatistics()
+    /**
+     * Memuat semua data statistik dan chart.
+     */
+    public function loadInitialData(): void
+    {
+        $this->updateStatistics();
+        $this->updateChartData();
+    }
+
+    /**
+     * Mengambil dan memperbarui data statistik dari database.
+     */
+    public function updateStatistics(): void
     {
         $this->totalItems = Item::count();
         $this->totalUsers = User::count();
-        $this->totalStock = Item::sum('quantity');
-        $this->totalIn = Transaction::where('type', 'in')->sum('quantity');
-        $this->totalOut = Transaction::where('type', 'out')->sum('quantity');
-        $this->totalDamaged = Transaction::where('type', 'damaged')->sum('quantity');
+        $this->totalStock = (int) Item::sum('quantity');
+        $this->totalIn = (int) Transaction::where('type', 'in')->sum('quantity');
+        $this->totalOut = (int) Transaction::where('type', 'out')->sum('quantity');
+        $this->totalDamaged = (int) Transaction::where('type', 'damaged')->sum('quantity');
     }
 
-    public function updateChartData()
+    /**
+     * Mengambil dan memformat data untuk ditampilkan di grafik.
+     */
+    public function updateChartData(): void
     {
+        // Data Stok per Kategori
         $categoryInfo = Item::select('category', DB::raw('SUM(quantity) as total_quantity'))
             ->groupBy('category')
             ->get();
-        $this->categoryLabels = $categoryInfo->pluck('category')->map(fn($cat) => $cat ?? 'Tanpa Kategori')->toArray();
+        $this->categoryLabels = $categoryInfo->pluck('category')->map(fn ($cat) => $cat ?? 'Tanpa Kategori')->toArray();
         $this->categoryData = $categoryInfo->pluck('total_quantity')->toArray();
         if (empty($this->categoryLabels)) {
             $this->categoryLabels = ['Belum Ada Data'];
             $this->categoryData = [0];
         }
 
+        // Data Tren Transaksi
         $this->trendData = [$this->totalIn, $this->totalOut, $this->totalDamaged];
-        if (array_sum($this->trendData) == 0) {
+        if (array_sum($this->trendData) === 0) {
             $this->trendData = [0, 0, 0];
         }
-        
-        $topItems = Item::orderBy('quantity', 'desc')->take(5)->get();
+
+        // Data 5 Barang Stok Tertinggi
+        $topItems = Item::orderByDesc('quantity')->take(5)->get();
         $this->topStockLabels = $topItems->pluck('name')->toArray();
         $this->topStockData = $topItems->pluck('quantity')->toArray();
     }
-    
-    public function changePassword()
+
+    /**
+     * Logika untuk mengubah password pengguna yang sedang login.
+     */
+    public function changePassword(): void
     {
         $this->validate([
             'password' => 'required',
             'newPassword' => 'required|min:6',
             'confPass' => 'required|same:newPassword',
         ]);
-        
+
         $user = auth()->user();
 
         if (!Hash::check($this->password, $user->password)) {
@@ -96,37 +120,42 @@ class HomeComponent extends Component
         $user->update(['password' => Hash::make($this->newPassword)]);
 
         session()->flash('dataSession', ['status' => 'success', 'message' => 'Password berhasil diperbarui.']);
-        
-        $this->reset(['password', 'newPassword', 'confPass']);
+
+        $this->reset('password', 'newPassword', 'confPass');
         $this->isModalOpen = false;
     }
-    
-    public function changeData()
+
+    /**
+     * Logika untuk mengubah nama pengguna yang sedang login.
+     */
+    public function changeData(): void
     {
         $this->validate([
             'name' => 'required|string',
             'confirmationPassword' => 'required|string',
         ]);
-        
+
         $user = auth()->user();
-        
+
         if (!Hash::check($this->confirmationPassword, $user->password)) {
-            session()->flash('dataSession', ['status' => 'failed', 'message' => 'Password konfirmasi yang Anda masukkan salah.']);
-            $this->addError('confirmationPassword', 'Password salah.');
+            $this->addError('confirmationPassword', 'Password konfirmasi yang Anda masukkan salah.');
             return;
         }
 
         $user->update(['name' => $this->name]);
 
         session()->flash('dataSession', ['status' => 'success', 'message' => 'Nama Anda berhasil diperbarui.']);
-        
+
         $this->isModalOpenData = false;
         $this->reset('confirmationPassword');
     }
 
+    /**
+     * Merender tampilan komponen.
+     */
     public function render()
     {
         return view('livewire.home')
-            ->layout('components.layouts.app',['data' => $this->data]);
+            ->layout('components.layouts.app', ['data' => $this->data]);
     }
 }

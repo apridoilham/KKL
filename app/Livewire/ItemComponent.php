@@ -9,84 +9,100 @@ use Livewire\WithPagination;
 class ItemComponent extends Component
 {
     use WithPagination;
+
+    // Menggunakan tema paginasi kustom
     protected $paginationTheme = 'tailwind-custom';
 
-    public $data;
-    public $search = '';
-    public $perPage = 10;
-    public $page;
+    // Properti untuk data halaman
+    public array $data;
 
-    public $id, $code, $category, $name;
+    // Properti untuk fungsionalitas tabel
+    public string $search = '';
+    public int $perPage = 10;
 
-    public $isModalOpen = false;
+    // Properti untuk form binding
+    public ?int $id = null;
+    public ?string $code = null, $category = null, $name = null;
 
-    protected $queryString = [
+    // Properti untuk manajemen modal
+    public bool $isModalOpen = false;
+
+    // Mengikat properti ke query string URL
+    protected array $queryString = [
         'search' => ['except' => ''],
         'perPage' => ['except' => 10],
-        'page' => ['except' => 1],
     ];
 
-    public function mount()
+    /**
+     * Inisialisasi komponen.
+     */
+    public function mount(): void
     {
         $this->data = [
             'title' => 'Manajemen Barang',
             'urlPath' => 'item'
         ];
     }
-    
-    public function updatedSearch()
+
+    /**
+     * Mereset halaman ke 1 setiap kali pencarian diubah.
+     */
+    public function updatedSearch(): void
     {
         $this->resetPage();
     }
 
-    public function resetInputFields(){
-        $this->id = '';
-        $this->code = '';
-        $this->category = '';
-        $this->name = '';
+    /**
+     * Membersihkan field input form.
+     */
+    public function resetInputFields(): void
+    {
+        $this->reset(['id', 'code', 'category', 'name']);
     }
-    
-    public function create(){
+
+    /**
+     * Menyiapkan modal untuk membuat data baru.
+     */
+    public function create(): void
+    {
         $this->resetInputFields();
         $this->isModalOpen = true;
     }
 
-    public function store(){
-        $this->validate([
+    /**
+     * Menyimpan data baru atau memperbarui data yang ada.
+     */
+    public function store(): void
+    {
+        $validatedData = $this->validate([
             'name' => 'required|string|max:255',
             'category' => 'nullable|string|max:255',
             'code' => 'nullable|string|max:50',
         ]);
 
-        if ($this->id) {
-            $item = Item::findOrFail($this->id);
-            $item->update([
-                'code' => $this->code,
-                'category' => $this->category,
-                'name' => $this->name,
-            ]);
-            $message = 'Barang berhasil diperbarui.';
-        } else {
-            Item::create([
-                'code' => $this->code,
-                'category' => $this->category,
-                'name' => $this->name,
-                'quantity' => 0,
-                'status' => 'out',
-            ]);
-            $message = 'Barang baru berhasil dibuat.';
-        }
-        
+        // Menggunakan updateOrCreate untuk menyederhanakan logika
+        Item::updateOrCreate(
+            ['id' => $this->id],
+            array_merge($validatedData, [
+                'quantity' => $this->id ? Item::find($this->id)->quantity : 0,
+                'status' => $this->id ? Item::find($this->id)->status : 'out',
+            ])
+        );
+
         session()->flash('dataSession', [
             'status' => 'success',
-            'message' => $message
+            'message' => $this->id ? 'Barang berhasil diperbarui.' : 'Barang baru berhasil dibuat.'
         ]);
 
         $this->isModalOpen = false;
         $this->resetInputFields();
     }
 
-    public function edit($id){
+    /**
+     * Mengisi form dengan data yang akan di-edit.
+     */
+    public function edit(int $id): void
+    {
         $item = Item::findOrFail($id);
         $this->id = $item->id;
         $this->code = $item->code;
@@ -95,7 +111,11 @@ class ItemComponent extends Component
         $this->isModalOpen = true;
     }
 
-    public function delete($id){
+    /**
+     * Menghapus data barang.
+     */
+    public function delete(int $id): void
+    {
         if (auth()->user()->role !== 'admin') {
             session()->flash('dataSession', [
                 'status' => 'failed',
@@ -118,17 +138,23 @@ class ItemComponent extends Component
         }
     }
 
+    /**
+     * Merender tampilan komponen.
+     */
     public function render()
     {
         $items = Item::query()
-            ->where('code', 'like', '%'.$this->search.'%')
-            ->orWhere('category', 'like', '%'.$this->search.'%')
-            ->orWhere('name', 'like', '%'.$this->search.'%')
+            // Membungkus query pencarian dalam closure untuk keamanan
+            ->where(function ($query) {
+                $query->where('code', 'like', '%' . $this->search . '%')
+                    ->orWhere('category', 'like', '%' . $this->search . '%')
+                    ->orWhere('name', 'like', '%' . $this->search . '%');
+            })
             ->latest()
             ->paginate($this->perPage);
 
-        return view('livewire.item',[
+        return view('livewire.item', [
             'items' => $items,
-        ])->layout('components.layouts.app',['data' => $this->data]);
+        ])->layout('components.layouts.app', ['data' => $this->data]);
     }
 }
