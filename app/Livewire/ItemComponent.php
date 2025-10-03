@@ -77,19 +77,24 @@ class ItemComponent extends Component
         $validatedData = $this->validate([
             'name' => 'required|string|max:255',
             'category' => 'nullable|string|max:255',
-            'code' => 'nullable|string|max:50',
+            'code' => 'nullable|string|max:50|unique:items,code,' . $this->id,
         ]);
-
-        // Menggunakan updateOrCreate untuk menyederhanakan logika
-        Item::updateOrCreate(
+        
+        // Menggunakan updateOrCreate untuk menyederhanakan logika simpan/update
+        $item = Item::updateOrCreate(
             ['id' => $this->id],
-            array_merge($validatedData, [
-                'quantity' => $this->id ? Item::find($this->id)->quantity : 0,
-                'status' => $this->id ? Item::find($this->id)->status : 'out',
-            ])
+            $validatedData
         );
 
-        session()->flash('dataSession', [
+        // Saat membuat item baru, inisialisasi quantity dan status
+        if (!$this->id) {
+            $item->quantity = 0;
+            $item->status = 'out';
+            $item->save();
+        }
+
+        // Mengirim notifikasi toast ke frontend
+        $this->dispatch('toast', [
             'status' => 'success',
             'message' => $this->id ? 'Barang berhasil diperbarui.' : 'Barang baru berhasil dibuat.'
         ]);
@@ -117,24 +122,16 @@ class ItemComponent extends Component
     public function delete(int $id): void
     {
         if (auth()->user()->role !== 'admin') {
-            session()->flash('dataSession', [
-                'status' => 'failed',
-                'message' => 'Anda tidak memiliki otorisasi untuk melakukan aksi ini.'
-            ]);
+            $this->dispatch('toast', ['status' => 'failed', 'message' => 'Anda tidak memiliki otorisasi.']);
             return;
         }
 
         try {
             Item::findOrFail($id)->delete();
-            session()->flash('dataSession', [
-                'status' => 'success',
-                'message' => 'Data berhasil dihapus.'
-            ]);
+            $this->dispatch('toast', ['status' => 'success', 'message' => 'Data berhasil dihapus.']);
         } catch (\Exception $e) {
-            session()->flash('dataSession', [
-                'status' => 'failed',
-                'message' => 'Tidak dapat menghapus barang karena terhubung dengan transaksi lain.'
-            ]);
+            // Menangkap error jika item terhubung dengan transaksi
+            $this->dispatch('toast', ['status' => 'failed', 'message' => 'Gagal! Barang terhubung dengan transaksi.']);
         }
     }
 
@@ -144,7 +141,7 @@ class ItemComponent extends Component
     public function render()
     {
         $items = Item::query()
-            // Membungkus query pencarian dalam closure untuk keamanan
+            // Membungkus query pencarian dalam closure untuk keamanan dan akurasi
             ->where(function ($query) {
                 $query->where('code', 'like', '%' . $this->search . '%')
                     ->orWhere('category', 'like', '%' . $this->search . '%')

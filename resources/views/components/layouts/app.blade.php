@@ -35,5 +35,44 @@
     
     @livewireScripts
     @stack('scripts')
+
+    {{-- Komponen Notifikasi Toast dengan AlpineJS --}}
+    <div
+        x-data="{
+            show: false,
+            message: '',
+            status: 'success',
+            timer: null,
+            pop(event) {
+                this.show = true;
+                this.message = event.detail.message;
+                this.status = event.detail.status;
+                clearTimeout(this.timer);
+                this.timer = setTimeout(() => { this.show = false }, 5000);
+            }
+        }"
+        x-on:toast.window="pop($event)"
+        x-show="show"
+        x-transition:enter-start="opacity-0 translate-x-12"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:leave="transition ease-in duration-300"
+        x-transition:leave-end="opacity-0 translate-x-12"
+        @click.away="show = false"
+        class="fixed bottom-5 right-5 w-full max-w-xs z-50"
+        x-cloak
+    >
+        <div class="p-4 rounded-lg shadow-lg text-white" :class="{ 'bg-green-500': status === 'success', 'bg-red-500': status === 'failed' }">
+            <div class="flex items-center">
+                <div class="mr-3">
+                    <i x-show="status === 'success'" class="fas fa-check-circle fa-lg"></i>
+                    <i x-show="status === 'failed'" class="fas fa-times-circle fa-lg"></i>
+                </div>
+                <div x-text="message" class="font-medium"></div>
+                <button @click="show = false" class="ml-auto -mx-1.5 -my-1.5 p-1.5 rounded-full hover:bg-white/20">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
