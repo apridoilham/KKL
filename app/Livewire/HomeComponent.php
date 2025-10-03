@@ -7,6 +7,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache; // Import Cache
 use Livewire\Component;
 
 class HomeComponent extends Component
@@ -59,16 +60,18 @@ class HomeComponent extends Component
     }
 
     /**
-     * Mengambil dan memperbarui data statistik dari database.
+     * Mengambil dan memperbarui data statistik dari database dengan Caching.
      */
     public function updateStatistics(): void
     {
-        $this->totalItems = Item::count();
-        $this->totalUsers = User::count();
-        $this->totalStock = (int) Item::sum('quantity');
-        $this->totalIn = (int) Transaction::where('type', 'in')->sum('quantity');
-        $this->totalOut = (int) Transaction::where('type', 'out')->sum('quantity');
-        $this->totalDamaged = (int) Transaction::where('type', 'damaged')->sum('quantity');
+        $duration = config('inventory.stats_cache_duration', 300);
+
+        $this->totalItems = Cache::remember('stats:total_items', $duration, fn() => Item::count());
+        $this->totalUsers = Cache::remember('stats:total_users', $duration, fn() => User::count());
+        $this->totalStock = (int) Cache::remember('stats:total_stock', $duration, fn() => Item::sum('quantity'));
+        $this->totalIn = (int) Cache::remember('stats:total_in', $duration, fn() => Transaction::where('type', 'in')->sum('quantity'));
+        $this->totalOut = (int) Cache::remember('stats:total_out', $duration, fn() => Transaction::where('type', 'out')->sum('quantity'));
+        $this->totalDamaged = (int) Cache::remember('stats:total_damaged', $duration, fn() => Transaction::where('type', 'damaged')->sum('quantity'));
     }
 
     /**
@@ -113,14 +116,12 @@ class HomeComponent extends Component
         $user = auth()->user();
 
         if (!Hash::check($this->password, $user->password)) {
-            session()->flash('dataSession', ['status' => 'failed', 'message' => 'Password saat ini salah.']);
+            $this->dispatch('toast', ['status' => 'failed', 'message' => 'Password saat ini salah.']);
             return;
         }
 
         $user->update(['password' => Hash::make($this->newPassword)]);
-
-        session()->flash('dataSession', ['status' => 'success', 'message' => 'Password berhasil diperbarui.']);
-
+        $this->dispatch('toast', ['status' => 'success', 'message' => 'Password berhasil diperbarui.']);
         $this->reset('password', 'newPassword', 'confPass');
         $this->isModalOpen = false;
     }
@@ -143,9 +144,7 @@ class HomeComponent extends Component
         }
 
         $user->update(['name' => $this->name]);
-
-        session()->flash('dataSession', ['status' => 'success', 'message' => 'Nama Anda berhasil diperbarui.']);
-
+        $this->dispatch('toast', ['status' => 'success', 'message' => 'Nama Anda berhasil diperbarui.']);
         $this->isModalOpenData = false;
         $this->reset('confirmationPassword');
     }
@@ -155,7 +154,6 @@ class HomeComponent extends Component
      */
     public function render()
     {
-        return view('livewire.home')
-            ->layout('components.layouts.app', ['data' => $this->data]);
+        return view('livewire.home')->layout('components.layouts.app', ['data' => $this->data]);
     }
 }

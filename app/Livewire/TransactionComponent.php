@@ -4,8 +4,10 @@ namespace App\Livewire;
 
 use App\Models\Item;
 use App\Models\Transaction;
-use App\Services\TransactionService; // Mengimpor Service Class
+use App\Services\TransactionService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache; // Import Cache
+use Illuminate\Auth\Access\AuthorizationException; // Import Exception Otorisasi
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -21,9 +23,6 @@ class TransactionComponent extends Component
     public string $search = '';
     public int $perPage = 10;
     public string $filterType = 'all';
-
-    // Properti konfigurasi
-    public int $lockedTime = 10; // Waktu dalam menit sebelum transaksi terkunci
 
     // Properti untuk form binding
     public ?int $id = null, $itemId = null;
@@ -42,9 +41,6 @@ class TransactionComponent extends Component
         'filterType' => ['except' => 'all'],
     ];
 
-    /**
-     * Metode yang dijalankan saat komponen pertama kali di-mount.
-     */
     public function mount(): void
     {
         $this->data = [
@@ -53,17 +49,11 @@ class TransactionComponent extends Component
         ];
     }
 
-    /**
-     * Dijalankan setiap kali properti 'search' diperbarui.
-     */
     public function updatedSearch(): void
     {
         $this->resetPage();
     }
 
-    /**
-     * Memuat data item untuk dropdown, dioptimalkan agar hanya berjalan sekali.
-     */
     private function loadItems(): void
     {
         if (!$this->itemsLoaded) {
@@ -72,18 +62,12 @@ class TransactionComponent extends Component
         }
     }
 
-    /**
-     * Membersihkan semua field input pada form.
-     */
     public function resetInputFields(): void
     {
         $this->reset(['id', 'itemId', 'type', 'description']);
         $this->quantity = 1;
     }
 
-    /**
-     * Menyiapkan dan membuka modal untuk membuat transaksi baru.
-     */
     public function create(): void
     {
         $this->resetInputFields();
@@ -92,8 +76,16 @@ class TransactionComponent extends Component
     }
 
     /**
-     * Menyimpan transaksi baru dengan mendelegasikan logika ke TransactionService.
+     * Membersihkan cache statistik setiap ada perubahan data.
      */
+    private function clearStatsCache(): void
+    {
+        Cache::forget('stats:total_stock');
+        Cache::forget('stats:total_in');
+        Cache::forget('stats:total_out');
+        Cache::forget('stats:total_damaged');
+    }
+
     public function store(TransactionService $transactionService): void
     {
         $validatedData = $this->validate([
@@ -104,7 +96,6 @@ class TransactionComponent extends Component
         ]);
 
         try {
-            // Panggil service untuk menangani semua logika bisnis
             $transactionService->createTransaction([
                 'item_id' => $validatedData['itemId'],
                 'type' => $validatedData['type'],
@@ -112,6 +103,7 @@ class TransactionComponent extends Component
                 'description' => $validatedData['description'],
             ]);
 
+            $this->clearStatsCache(); // Membersihkan cache
             $this->dispatch('toast', ['status' => 'success', 'message' => 'Transaksi berhasil dibuat.']);
             $this->isModalOpen = false;
             $this->resetInputFields();
@@ -121,42 +113,39 @@ class TransactionComponent extends Component
         }
     }
 
-    /**
-     * Menghapus transaksi dan mengembalikan stok secara otomatis.
-     */
     public function delete(int $id): void
     {
-        if (auth()->user()->role !== 'admin') {
+        try {
+            $this->authorize('delete-transaction'); // Menggunakan Gate untuk otorisasi
+        } catch (AuthorizationException $e) {
             $this->dispatch('toast', ['status' => 'failed', 'message' => 'Anda tidak memiliki otorisasi.']);
             return;
         }
 
         $transaction = Transaction::findOrFail($id);
+        $lockTime = config('inventory.transaction_lock_time', 10);
         
-        if (Carbon::parse($transaction->created_at)->diffInMinutes(Carbon::now()) > $this->lockedTime) {
-            $this->dispatch('toast', ['status' => 'failed', 'message' => "Transaksi terkunci setelah {$this->lockedTime} menit."]);
+        if (Carbon::parse($transaction->created_at)->diffInMinutes(Carbon::now()) > $lockTime) {
+            $this->dispatch('toast', ['status' => 'failed', 'message' => "Transaksi terkunci setelah {$lockTime} menit."]);
             return;
         }
 
-        $item = $transaction->item;
         try {
+            $item = $transaction->item;
             if ($transaction->type == 'in') {
                 $item->decreaseStock($transaction->quantity);
             } else {
                 $item->increaseStock($transaction->quantity);
             }
+            
+            $transaction->delete();
+            $this->clearStatsCache(); // Membersihkan cache
+            $this->dispatch('toast', ['status' => 'success', 'message' => 'Transaksi dihapus, stok dikembalikan.']);
         } catch (\Exception $e) {
             $this->dispatch('toast', ['status' => 'failed', 'message' => $e->getMessage()]);
-            return;
         }
-        
-        $transaction->delete();
-        $this->dispatch('toast', ['status' => 'success', 'message' => 'Transaksi dihapus, stok dikembalikan.']);
     }
 
-    /**
-     * Merender view komponen dengan data yang diperlukan.
-     */
     public function render()
     {
         $transactions = Transaction::with('item')

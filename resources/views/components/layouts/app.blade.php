@@ -15,7 +15,9 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {{-- HAPUS BARIS DI BAWAH INI --}}
+    {{-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> --}}
+    
 </head>
 <body class="bg-slate-100 font-sans">
     <div x-data="{ sidebarOpen: window.innerWidth > 768 }" class="flex h-screen bg-slate-100">
