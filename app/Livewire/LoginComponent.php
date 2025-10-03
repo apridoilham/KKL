@@ -10,35 +10,34 @@ use Livewire\Component;
 class LoginComponent extends Component
 {
     public $data, $checkData;
-    public $username, $password,$name, $securityQuestion, $securityAnswer, $newPassword, $confPass;
+    public $username, $password, $name, $securityQuestion, $securityAnswer, $newPassword, $confPass;
     public $isModalOpen = false;
     public $isVerified, $isUserFound;
 
-    public function mount(){
-        $this->data = [
-            'title' => 'Login Page',
-            'urlPath' => 'login'
-        ];
+    public function mount()
+    {
+        $this->data = ['title' => 'Login Page', 'urlPath' => 'login'];
         $this->checkData = User::count();
     }
 
-    public function submit(){
-        if($this->checkData > 0){
+    public function submit()
+    {
+        if ($this->checkData > 0) {
             $this->loginProcess();
         } else {
             $this->saveData();
         }
     }
 
-    private function saveData(){
+    private function saveData()
+    {
         $this->validate([
-            'username' => 'required|string|min:3',
+            'username' => 'required|string|min:3|unique:users,username',
             'password' => 'required|string|min:6',
             'name' => 'required|string',
             'securityQuestion' => 'required|string',
             'securityAnswer' => 'required|string',
         ]);
-
         User::create([
             'username' => $this->username,
             'password' => Hash::make($this->password),
@@ -47,56 +46,49 @@ class LoginComponent extends Component
             'security_answer' => Hash::make($this->securityAnswer),
             'role' => 'admin',
         ]);
-
         $this->checkData = User::count();
         $this->reset(['username', 'password', 'name', 'securityQuestion', 'securityAnswer']);
-
         session()->flash('dataSession', ['status' => 'success', 'message' => 'Akun Admin berhasil dibuat. Silakan login.']);
     }
 
-    private function loginProcess(){
-        $this->validate([
-            'username' => 'required|string',
-            'password' => 'required|string',
-        ]);
-
+    private function loginProcess()
+    {
+        $this->validate(['username' => 'required|string', 'password' => 'required|string']);
         $user = User::where('username', $this->username)->first();
-
-        if(!$user || !Hash::check($this->password, $user->password)) {
-            return session()->flash('dataSession', ['status' => 'failed', 'message' => 'Username atau password salah.']);
+        if (!$user || !Hash::check($this->password, $user->password)) {
+            $this->addError('username', 'Username atau password salah.');
+            return;
         }
-        
-        Auth::login($user); 
+        Auth::login($user);
         return redirect()->route('home');
     }
 
-    public function verifyData(){
+    public function verifyData()
+    {
         $this->validate(['username' => 'required|string']);
         $user = User::where('username', $this->username)->first();
-
-        if(!$user) {
-            return session()->flash('dataSession2', ['status' => 'failed', 'message' => 'Username tidak ditemukan.']);
+        if (!$user) {
+            session()->flash('dataSession2', ['status' => 'failed', 'message' => 'Username tidak ditemukan.']);
+            return;
         }
-        
         $this->isUserFound = true;
         $this->securityQuestion = $user->security_question;
-
-        if($this->isUserFound && $this->securityAnswer){
+        if ($this->isUserFound && $this->securityAnswer) {
             if (Hash::check($this->securityAnswer, $user->security_answer)) {
                 $this->isVerified = true;
             } else {
-                return session()->flash('dataSession2', ['status' => 'failed', 'message' => 'Jawaban keamanan salah.']);
+                session()->flash('dataSession2', ['status' => 'failed', 'message' => 'Jawaban keamanan salah.']);
             }
         }
     }
 
-    public function changePassword(){
+    public function changePassword()
+    {
         $this->validate([
             'newPassword' => 'required|string|min:6',
             'confPass' => 'required|string|same:newPassword',
         ]);
-
-        User::where('username','=', $this->username)->update(['password' => Hash::make($this->newPassword)]);
+        User::where('username', '=', $this->username)->update(['password' => Hash::make($this->newPassword)]);
         session()->flash('dataSession2', ['status' => 'success', 'message' => 'Password berhasil diubah.']);
         $this->reset(['newPassword', 'confPass', 'isVerified', 'isUserFound', 'username', 'securityQuestion', 'securityAnswer']);
         $this->isModalOpen = false;

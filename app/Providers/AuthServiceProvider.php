@@ -22,15 +22,13 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Mendefinisikan Gate untuk admin
-        // Gate ini akan bernilai true jika pengguna yang login memiliki role 'admin'
-        Gate::define('is-admin', function (User $user) {
-            return $user->role === 'admin';
-        });
+        // Fungsi trim() akan menghapus spasi di awal/akhir
+        // Fungsi strtolower() akan mengubah semua menjadi huruf kecil
+        $checkAdmin = fn(User $user) => strtolower(trim($user->role)) === 'admin';
 
-        // Gate spesifik untuk aksi-aksi yang hanya boleh dilakukan admin
-        Gate::define('delete-item', fn(User $user) => $user->role === 'admin');
-        Gate::define('delete-transaction', fn(User $user) => $user->role === 'admin');
-        Gate::define('manage-users', fn(User $user) => $user->role === 'admin');
+        Gate::define('is-admin', $checkAdmin);
+        Gate::define('delete-item', $checkAdmin);
+        Gate::define('delete-transaction', $checkAdmin);
+        Gate::define('manage-users', $checkAdmin);
     }
 }

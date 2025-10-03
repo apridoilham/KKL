@@ -1,8 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
-
 use App\Livewire\HomeComponent;
 use App\Livewire\ItemComponent;
 use App\Livewire\LoginComponent;
@@ -10,6 +7,22 @@ use App\Livewire\ReportComponent;
 use App\Livewire\ReportPrintComponent;
 use App\Livewire\TransactionComponent;
 use App\Livewire\UserComponent;
+use App\Http\Controllers\ReportDownloadController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Gate; // <-- Tambahkan ini
+use App\Models\User; // <-- Tambahkan ini
+
+/*
+|--------------------------------------------------------------------------
+| Definisi Gate Darurat
+|--------------------------------------------------------------------------
+| Kita definisikan Gate langsung di sini untuk memastikan ia terbaca.
+*/
+Gate::define('manage-users', function (User $user) {
+    return strtolower(trim($user->role)) === 'admin';
+});
+
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +43,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/report', ReportComponent::class);
     Route::get('/user', UserComponent::class);
     Route::get('/report/print', ReportPrintComponent::class)->name('print.report');
+    Route::get('/report/download/{type}', [ReportDownloadController::class, 'download'])->name('report.download');
 });
 
 // Rute untuk proses logout

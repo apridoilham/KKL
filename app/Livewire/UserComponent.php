@@ -1,69 +1,68 @@
 <?php
 
-namespace App\Livewire; // <-- PERUBAHAN UTAMA DI SINI
+namespace App\Livewire;
 
-use App\Http\Requests\StoreUserRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Auth\Access\AuthorizationException;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Validation\Rule;
 
 class UserComponent extends Component
 {
     use WithPagination;
     protected $paginationTheme = 'tailwind-custom';
-
-    // Properti untuk data halaman
     public array $data;
-
-    // Properti fungsionalitas tabel
     public string $search = '';
     public int $perPage = 10;
-    
-    // Properti form binding
     public ?int $userId = null;
     public string $name = '', $username = '', $role = '';
     public ?string $password = null, $password_confirmation = null;
-
-    // Properti state management
     public bool $isModalOpen = false;
     public bool $isEditMode = false;
 
-    /**
-     * Dijalankan saat komponen pertama kali dimuat.
-     */
-    public function mount(): void
+    protected function rules()
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Unauthorized Action');
-        }
-
-        $this->data = [
-            'title' => 'Manajemen Pengguna',
-            'urlPath' => 'user'
+        $rules = [
+            'name' => 'required|string|max:255',
+            'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($this->userId)],
+            'role' => 'required|in:admin,staff',
         ];
+        if (!$this->isEditMode) {
+            $rules['password'] = 'required|string|min:6|confirmed';
+        } else {
+            $rules['password'] = 'nullable|string|min:6|confirmed';
+        }
+        return $rules;
     }
 
-    /**
-     * Membersihkan semua field input dan state modal.
-     */
+    public function mount(): void
+    {
+        if (Gate::denies('manage-users')) {
+            abort(403);
+        }
+        $this->data = ['title' => 'Manajemen Pengguna', 'urlPath' => 'user'];
+    }
+    
+    private function clearStatsCache(): void
+    {
+        Cache::forget('stats:total_users');
+    }
+
     public function resetInputFields(): void
     {
         $this->reset(['userId', 'name', 'username', 'role', 'password', 'password_confirmation', 'isModalOpen', 'isEditMode']);
     }
 
-    /**
-     * Menyiapkan modal untuk membuat pengguna baru.
-     */
     public function create(): void
     {
         $this->resetInputFields();
         $this->isModalOpen = true;
     }
 
-    /**
-     * Mengisi form dengan data pengguna yang akan diedit.
-     */
     public function edit(int $id): void
     {
         $user = User::findOrFail($id);
@@ -71,67 +70,48 @@ class UserComponent extends Component
         $this->name = $user->name;
         $this->username = $user->username;
         $this->role = $user->role;
-        
         $this->isEditMode = true;
         $this->isModalOpen = true;
     }
 
-    /**
-     * Menyimpan data pengguna baru atau memperbarui yang sudah ada.
-     */
-    public function store(StoreUserRequest $request): void
+    public function store(): void
     {
-        $validatedData = $request->validated();
-
+        $validatedData = $this->validate();
         $userData = [
             'name' => $validatedData['name'],
             'username' => $validatedData['username'],
             'role' => $validatedData['role'],
         ];
-
         if (!empty($validatedData['password'])) {
             $userData['password'] = Hash::make($validatedData['password']);
         }
-
         User::updateOrCreate(['id' => $this->userId], $userData);
-
+        $this->clearStatsCache();
         $this->dispatch('toast', [
             'status' => 'success',
             'message' => $this->userId ? 'Data Pengguna berhasil diperbarui.' : 'Pengguna baru berhasil dibuat.'
         ]);
-
         $this->resetInputFields();
     }
 
-    /**
-     * Menghapus pengguna.
-     */
     public function delete(int $id): void
     {
         if ($id == auth()->id()) {
             $this->dispatch('toast', ['status' => 'failed', 'message' => 'Anda tidak dapat menghapus akun Anda sendiri.']);
             return;
         }
-
         User::findOrFail($id)->delete();
+        $this->clearStatsCache();
         $this->dispatch('toast', ['status' => 'success', 'message' => 'Pengguna berhasil dihapus.']);
     }
 
-    /**
-     * Merender view komponen.
-     */
     public function render()
     {
         $users = User::query()
-            ->where(function ($query) {
-                $query->where('name', 'like', '%' . $this->search . '%')
-                    ->orWhere('username', 'like', '%' . $this->search . '%');
-            })
+            ->where(fn($query) => $query->where('name', 'like', '%' . $this->search . '%')
+                ->orWhere('username', 'like', '%' . $this->search . '%'))
             ->latest()
             ->paginate($this->perPage);
-
-        return view('livewire.user', [
-            'users' => $users
-        ])->layout('components.layouts.app', ['data' => $this->data]);
+        return view('livewire.user', ['users' => $users])->layout('components.layouts.app', ['data' => $this->data]);
     }
 }

@@ -51,11 +51,11 @@
                                 </select>
                                 <span>s/d</span>
                                 <select wire:model="monthUntil" class="block w-full border-slate-300 rounded-lg">
-                                     @for ($i = 1; $i <= 12; $i++) <option value="{{ $i }}">{{ date('F', mktime(0, 0, 0, $i, 10)) }}</option> @endfor
+                                    @for ($i = 1; $i <= 12; $i++) <option value="{{ $i }}">{{ date('F', mktime(0, 0, 0, $i, 10)) }}</option> @endfor
                                 </select>
                                 <input wire:model="selectYear" type="number" class="block w-full border-slate-300 rounded-lg" placeholder="Tahun">
                             </div>
-                             @error('monthFrom') <span class="text-red-500 text-xs">{{$message}}</span> @enderror
+                            @error('monthFrom') <span class="text-red-500 text-xs">{{$message}}</span> @enderror
                         </div>
                     @elseif ($filterBy == 'year')
                          <div>
@@ -77,9 +77,35 @@
         <div class="p-6 bg-slate-50 flex justify-end items-center space-x-3 border-t border-slate-200">
             <button wire:click="handleReset" class="px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50">Reset</button>
             <button wire:click="generatePreview" class="px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Buat Pratinjau</button>
-            <button wire:click="handlePrint" @if(!$reportData) disabled @endif class="inline-flex items-center px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed">
+            
+            <button wire:click="handlePrint" @if(!$reportData) disabled @endif class="inline-flex items-center px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 disabled:bg-teal-300 disabled:cursor-not-allowed">
                 <i class="fas fa-print mr-2"></i> Cetak
             </button>
+            
+            <div x-data="{ open: false }" class="relative">
+                <button @click="open = !open" @if(!$reportData) disabled @endif class="inline-flex items-center px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed">
+                    <i class="fas fa-download mr-2"></i> Download <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                </button>
+                
+                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl py-2 z-10" x-cloak>
+                    @php
+                        // Menyiapkan query parameters untuk link download agar filter tetap terbawa
+                        $queryParams = array_filter([
+                            'filter' => $filter, 'filterBy' => $filterBy, 'dateFrom' => $dateFrom, 'dateUntil' => $dateUntil,
+                            'monthFrom' => $monthFrom, 'monthUntil' => $monthUntil, 'selectYear' => $selectYear,
+                        ]);
+                    @endphp
+                    <a href="{{ route('report.download', array_merge(['type' => 'pdf'], $queryParams)) }}" class="block px-4 py-2 text-sm text-slate-700 hover:bg-indigo-500 hover:text-white">
+                        <i class="fas fa-file-pdf fa-sm fa-fw mr-2"></i> PDF
+                    </a>
+                    <a href="{{ route('report.download', array_merge(['type' => 'xlsx'], $queryParams)) }}" class="block px-4 py-2 text-sm text-slate-700 hover:bg-indigo-500 hover:text-white">
+                        <i class="fas fa-file-excel fa-sm fa-fw mr-2"></i> Excel (XLSX)
+                    </a>
+                    <a href="{{ route('report.download', array_merge(['type' => 'csv'], $queryParams)) }}" class="block px-4 py-2 text-sm text-slate-700 hover:bg-indigo-500 hover:text-white">
+                        <i class="fas fa-file-csv fa-sm fa-fw mr-2"></i> CSV
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
     

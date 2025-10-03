@@ -2,31 +2,43 @@
 
 namespace App\Livewire;
 
-use App\Traits\BuildsReportQuery; // Menggunakan Trait baru
+use App\Models\Item;
+use App\Models\Transaction;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 
 class ReportPrintComponent extends Component
 {
-    use BuildsReportQuery; // Mengaktifkan Trait
-
     public $reportData;
     public string $titleData = 'Laporan Inventaris';
     public array $data;
     public string $filter, $filterBy;
     public array $params;
 
+    private function buildReportQuery(string $filter, string $filterBy, array $params): Builder
+    {
+        $query = $filter === 'item' ? Item::query() : Transaction::with('item')->where('type', $filter);
+        switch ($filterBy) {
+            case 'date':
+                $query->whereBetween('created_at', [$params['dateFrom'], $params['dateUntil']]);
+                break;
+            case 'month':
+                $query->whereYear('created_at', $params['selectYear'])
+                    ->whereMonth('created_at', '>=', $params['monthFrom'])
+                    ->whereMonth('created_at', '<=', $params['monthUntil']);
+                break;
+            case 'year':
+                $query->whereYear('created_at', $params['selectYear']);
+                break;
+        }
+        return $query->orderByDesc('created_at');
+    }
+
     public function mount(): void
     {
-        $this->data = [
-            'title' => 'Cetak Laporan',
-            'urlPath' => 'report'
-        ];
-
-        // Mengambil data dari request URL, bukan session
+        $this->data = ['title' => 'Cetak Laporan', 'urlPath' => 'report'];
         $requestData = request()->query();
-
-        // Validasi input dari query string
         $validator = Validator::make($requestData, [
             'filter' => 'required|in:item,in,out,damaged',
             'filterBy' => 'required|in:date,month,year',
@@ -36,27 +48,19 @@ class ReportPrintComponent extends Component
             'monthUntil' => 'required_if:filterBy,month|integer',
             'selectYear' => 'required_if:filterBy,month,year|integer',
         ]);
-
         if ($validator->fails()) {
-            // Jika validasi gagal, set reportData menjadi null
             $this->reportData = null;
             session()->flash('dataSession', ['status' => 'failed', 'message' => 'Parameter laporan tidak valid.']);
             return;
         }
-        
         $validated = $validator->validated();
-
         $this->filter = $validated['filter'];
         $this->filterBy = $validated['filterBy'];
         $this->params = $validated;
-
-        // Memanggil metode dari Trait
         $this->reportData = $this->buildReportQuery($this->filter, $this->filterBy, $this->params)->get();
-
         if ($this->reportData->isEmpty()) {
             session()->flash('dataSession', ['status' => 'failed', 'message' => 'Tidak ada data yang ditemukan untuk dicetak.']);
         }
-        
         switch ($this->filter) {
             case 'item': $this->titleData = 'Laporan Data Barang'; break;
             case 'in': $this->titleData = 'Laporan Barang Masuk'; break;
@@ -67,7 +71,6 @@ class ReportPrintComponent extends Component
 
     public function render()
     {
-        return view('livewire.report-print')
-            ->layout('components.layouts.blank', ['data' => $this->data]);
+        return view('livewire.report-print')->layout('components.layouts.blank', ['data' => $this->data]);
     }
 }

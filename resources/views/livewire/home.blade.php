@@ -5,23 +5,21 @@
             <h1 class="text-3xl font-extrabold text-slate-800">Halo, {{ auth()->user()->name }}! 👋</h1>
             <p class="mt-1 text-slate-600">Selamat datang kembali, berikut ringkasan inventaris Anda.</p>
         </div>
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-3 mt-4 md:mt-0">
             {{-- Tombol Ubah Data --}}
-            <button wire:click="$set('isModalOpenData', true)" 
-                    class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+            <button wire:click="$set('isModalOpenData', true)" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
                 <i class="fas fa-edit fa-fw mr-2 text-slate-500"></i>
                 Ubah Data
             </button>
 
             {{-- Tombol Ubah Password --}}
-            <button wire:click="$set('isModalOpen', true)"
-                    class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+            <button wire:click="$set('isModalOpen', true)" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
                 <i class="fas fa-key fa-fw mr-2 text-slate-500"></i>
                 Ubah Password
             </button>
         </div>
     </div>
-    
+
     @if (session()->has('dataSession'))
         <div class="alert alert-{{ session('dataSession')['status'] == 'success' ? 'success' : 'danger' }} alert-dismissible fade show mb-6" role="alert">
             {{ session('dataSession')['message'] }}
@@ -88,22 +86,26 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg">
-            <h3 class="font-bold text-slate-800 mb-4">5 Barang Stok Tertinggi</h3>
-            <div class="h-80"><canvas id="topStockChart"></canvas></div>
-        </div>
-        <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                <h3 class="font-bold text-slate-800 mb-4">Stok per Kategori</h3>
-                <div class="h-64"><canvas id="categoryChart"></canvas></div>
+    {{-- PERBAIKAN: Membungkus seluruh area grafik dengan div wire:ignore --}}
+    <div wire:ignore>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg">
+                <h3 class="font-bold text-slate-800 mb-4">5 Barang Stok Tertinggi</h3>
+                <div class="h-80"><canvas id="topStockChart"></canvas></div>
             </div>
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                <h3 class="font-bold text-slate-800 mb-4">Tren Transaksi</h3>
-                <div class="h-64"><canvas id="transactionTrendChart"></canvas></div>
+            <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="font-bold text-slate-800 mb-4">Stok per Kategori</h3>
+                    <div class="h-64"><canvas id="categoryChart"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h3 class="font-bold text-slate-800 mb-4">Tren Transaksi</h3>
+                    <div class="h-64"><canvas id="transactionTrendChart"></canvas></div>
+                </div>
             </div>
         </div>
     </div>
+    {{-- AKHIR PERBAIKAN --}}
 
     @if($isModalOpenData)
     <div x-data="{ show: @entangle('isModalOpenData') }" x-show="show" x-transition.opacity.duration.300ms class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
@@ -159,41 +161,46 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
 <script>
-document.addEventListener('livewire:navigated', () => {
-    Chart.defaults.color = '#64748b';
-    Chart.defaults.borderColor = 'rgba(0, 0, 0, 0.05)';
-    let charts = {};
-    const destroyChart = (chartId) => { if (charts[chartId]) charts[chartId].destroy(); };
-    const renderCharts = () => {
-        destroyChart('categoryChart');
-        destroyChart('transactionTrendChart');
-        destroyChart('topStockChart');
-        const ctxCategory = document.getElementById('categoryChart');
-        if (ctxCategory) {
-            charts['categoryChart'] = new Chart(ctxCategory, {
-                type: 'polarArea',
-                data: { labels: @json($categoryLabels), datasets: [{ data: @json($categoryData), backgroundColor: @json($chartPalette1) }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
-        }
-        const ctxTransaction = document.getElementById('transactionTrendChart');
-        if (ctxTransaction) {
-            charts['transactionTrendChart'] = new Chart(ctxTransaction, {
-                type: 'doughnut',
-                data: { labels: @json($trendLabels), datasets: [{ data: @json($trendData), backgroundColor: ['#28a745', '#ffc107', '#dc3545'], borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
-            });
-        }
-        const ctxTopStock = document.getElementById('topStockChart');
-        if (ctxTopStock) {
-            charts['topStockChart'] = new Chart(ctxTopStock, {
-                type: 'bar',
-                data: { labels: @json($topStockLabels), datasets: [{ label: 'Stok', data: @json($topStockData), backgroundColor: @json($chartPalette1), borderRadius: 4 }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } }
-            });
-        }
-    };
-    renderCharts();
-});
+    // PERBAIKAN: Mengganti event listener ke 'DOMContentLoaded' yang lebih standar
+    document.addEventListener('DOMContentLoaded', () => {
+        Chart.defaults.color = '#64748b';
+        Chart.defaults.borderColor = 'rgba(0, 0, 0, 0.05)';
+        
+        const renderCharts = () => {
+            if (window.myCharts) {
+                Object.values(window.myCharts).forEach(chart => chart.destroy());
+            }
+            window.myCharts = {};
+
+            const ctxCategory = document.getElementById('categoryChart');
+            if (ctxCategory) {
+                window.myCharts.categoryChart = new Chart(ctxCategory, {
+                    type: 'polarArea',
+                    data: { labels: @json($categoryLabels), datasets: [{ data: @json($categoryData), backgroundColor: @json($chartPalette1) }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+
+            const ctxTransaction = document.getElementById('transactionTrendChart');
+            if (ctxTransaction) {
+                window.myCharts.transactionTrendChart = new Chart(ctxTransaction, {
+                    type: 'doughnut',
+                    data: { labels: @json($trendLabels), datasets: [{ data: @json($trendData), backgroundColor: ['#28a745', '#ffc107', '#dc3545'], borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+
+            const ctxTopStock = document.getElementById('topStockChart');
+            if (ctxTopStock) {
+                window.myCharts.topStockChart = new Chart(ctxTopStock, {
+                    type: 'bar',
+                    data: { labels: @json($topStockLabels), datasets: [{ label: 'Stok', data: @json($topStockData), backgroundColor: @json($chartPalette1), borderRadius: 4 }] },
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } }
+                });
+            }
+        };
+        
+        renderCharts();
+    });
 </script>
 @endpush

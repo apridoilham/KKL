@@ -2,7 +2,8 @@
     <table class="min-w-full text-sm text-left text-slate-500">
         <thead class="text-xs text-slate-700 uppercase bg-slate-50">
             <tr>
-                <th scope="col" class="px-6 py-3">#</th>
+                {{-- Ganti '#' menjadi 'No' --}}
+                <th scope="col" class="px-6 py-3">No</th>
                 <th scope="col" class="px-6 py-3">Kode</th>
                 <th scope="col" class="px-6 py-3">Kategori</th>
                 <th scope="col" class="px-6 py-3">Nama</th>
@@ -14,7 +15,8 @@
         <tbody class="divide-y divide-slate-200">
             @foreach ($data as $index => $item)
                 <tr class="hover:bg-slate-50">
-                    <td class="px-6 py-4">{{ $index + 1 }}</td>
+                    {{-- Gunakan $loop->iteration untuk nomor urut --}}
+                    <td class="px-6 py-4">{{ $loop->iteration }}</td>
                     <td class="px-6 py-4 font-mono text-slate-700">{{ $item->code ?: '-' }}</td>
                     <td class="px-6 py-4">{{ $item->category ?: '-' }}</td>
                     <td class="px-6 py-4 font-semibold text-slate-900">{{ $item->name }}</td>
