@@ -13,7 +13,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <label class="block text-sm font-medium text-slate-700">1. Pilih Tipe Data</label>
-                    <select wire:model.live="filter" class="mt-1 block w-full pl-3 pr-8 py-2.5 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                    <select wire:model.live="filter" class="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="">-- Pilih Data --</option>
                         <option value="item">Semua Barang</option>
                         <option value="in">Barang Masuk</option>
@@ -23,7 +23,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700">2. Pilih Periode</label>
-                    <select wire:model.live="filterBy" class="mt-1 block w-full pl-3 pr-8 py-2.5 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" @if(!$filter) disabled @endif>
+                    <select wire:model.live="filterBy" class="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" @if(!$filter) disabled @endif>
                         <option value="">-- Pilih Periode --</option>
                         <option value="date">Per Tanggal</option>
                         <option value="month">Per Bulan</option>
@@ -31,13 +31,14 @@
                     </select>
                 </div>
                 <div class="space-y-4">
+                    {{-- PERBAIKAN STYLING DIMULAI DARI SINI --}}
                     @if ($filterBy == 'date')
                         <div>
                             <label class="block text-sm font-medium text-slate-700">3. Rentang Tanggal</label>
-                            <div class="flex items-center space-x-2 mt-1">
-                                <input wire:model="dateFrom" type="date" class="block w-full border-slate-300 rounded-lg">
-                                <span>s/d</span>
-                                <input wire:model="dateUntil" type="date" class="block w-full border-slate-300 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <input wire:model="dateFrom" type="date" class="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                <span class="pt-1 text-slate-500">s/d</span>
+                                <input wire:model="dateUntil" type="date" class="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                             </div>
                             @error('dateFrom') <span class="text-red-500 text-xs">{{$message}}</span> @enderror
                             @error('dateUntil') <span class="text-red-500 text-xs">{{$message}}</span> @enderror
@@ -45,51 +46,48 @@
                     @elseif ($filterBy == 'month')
                         <div>
                             <label class="block text-sm font-medium text-slate-700">3. Rentang Bulan & Tahun</label>
-                            <div class="flex items-center space-x-2 mt-1">
-                                <select wire:model="monthFrom" class="block w-full border-slate-300 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <select wire:model="monthFrom" class="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                     @for ($i = 1; $i <= 12; $i++) <option value="{{ $i }}">{{ date('F', mktime(0, 0, 0, $i, 10)) }}</option> @endfor
                                 </select>
-                                <span>s/d</span>
-                                <select wire:model="monthUntil" class="block w-full border-slate-300 rounded-lg">
+                                <span class="pt-1 text-slate-500">s/d</span>
+                                <select wire:model="monthUntil" class="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                     @for ($i = 1; $i <= 12; $i++) <option value="{{ $i }}">{{ date('F', mktime(0, 0, 0, $i, 10)) }}</option> @endfor
                                 </select>
-                                <input wire:model="selectYear" type="number" class="block w-full border-slate-300 rounded-lg" placeholder="Tahun">
+                                <input wire:model="selectYear" type="number" class="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Tahun">
                             </div>
                             @error('monthFrom') <span class="text-red-500 text-xs">{{$message}}</span> @enderror
                         </div>
                     @elseif ($filterBy == 'year')
                          <div>
                             <label class="block text-sm font-medium text-slate-700">3. Pilih Tahun</label>
-                            <input wire:model="selectYear" type="number" class="mt-1 block w-full border-slate-300 rounded-lg" placeholder="cth: {{ date('Y') }}">
+                            <input wire:model="selectYear" type="number" class="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" placeholder="cth: {{ date('Y') }}">
                             @error('selectYear') <span class="text-red-500 text-xs">{{$message}}</span> @enderror
                         </div>
                     @else
                         <div>
                             <label class="block text-sm font-medium text-slate-400">3. Detail</label>
-                             <div class="mt-1 p-4 border-2 border-dashed border-slate-200 rounded-lg text-center text-slate-400">
+                             <div class="mt-1 p-4 border-2 border-dashed border-slate-200 rounded-lg text-center text-slate-400 h-[46px] flex items-center justify-center">
                                 <p>Pilih periode untuk melanjutkan</p>
                             </div>
                         </div>
                     @endif
+                    {{-- AKHIR DARI PERBAIKAN STYLING --}}
                 </div>
             </div>
         </div>
         <div class="p-6 bg-slate-50 flex justify-end items-center space-x-3 border-t border-slate-200">
             <button wire:click="handleReset" class="px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50">Reset</button>
             <button wire:click="generatePreview" class="px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Buat Pratinjau</button>
-            
             <button wire:click="handlePrint" @if(!$reportData) disabled @endif class="inline-flex items-center px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 disabled:bg-teal-300 disabled:cursor-not-allowed">
                 <i class="fas fa-print mr-2"></i> Cetak
             </button>
-            
             <div x-data="{ open: false }" class="relative">
                 <button @click="open = !open" @if(!$reportData) disabled @endif class="inline-flex items-center px-4 py-2.5 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed">
                     <i class="fas fa-download mr-2"></i> Download <i class="fas fa-chevron-down ml-2 text-xs"></i>
                 </button>
-                
                 <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl py-2 z-10" x-cloak>
                     @php
-                        // Menyiapkan query parameters untuk link download agar filter tetap terbawa
                         $queryParams = array_filter([
                             'filter' => $filter, 'filterBy' => $filterBy, 'dateFrom' => $dateFrom, 'dateUntil' => $dateUntil,
                             'monthFrom' => $monthFrom, 'monthUntil' => $monthUntil, 'selectYear' => $selectYear,
