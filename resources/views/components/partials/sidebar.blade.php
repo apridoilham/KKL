@@ -25,15 +25,37 @@
         
         <p class="px-4 mt-6 mb-2 text-xs font-semibold tracking-wider text-indigo-400 uppercase">Manajemen</p>
 
-        <a class="flex items-center px-4 py-2.5 mt-2 text-indigo-200 rounded-lg transition-colors duration-200 hover:bg-indigo-700 hover:text-white {{ $data['urlPath'] == 'item' ? 'bg-indigo-700 text-white' : '' }}" href="/item">
-            <i class="fas fa-fw fa-box"></i>
-            <span class="mx-4 font-medium">Barang</span>
-        </a>
+        <div x-data="{ open: {{ request()->is('item*') ? 'true' : 'false' }} }">
+            <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-2.5 mt-2 text-indigo-200 rounded-lg transition-colors duration-200 hover:bg-indigo-700 hover:text-white">
+                <span class="flex items-center">
+                    <i class="fas fa-fw fa-box"></i>
+                    <span class="mx-4 font-medium">Barang</span>
+                </span>
+                <i class="fas text-xs" :class="{ 'fa-chevron-down': !open, 'fa-chevron-up': open }"></i>
+            </button>
+            <div x-show="open" x-transition class="mt-2 space-y-2 pl-8">
+                <a href="/item?type=barang_mentah" class="block py-2 text-indigo-300 hover:text-white {{ request()->get('type') == 'barang_mentah' ? 'font-bold text-white' : '' }}">
+                    Barang Mentah
+                </a>
+                <a href="/item?type=barang_jadi" class="block py-2 text-indigo-300 hover:text-white {{ request()->get('type') == 'barang_jadi' ? 'font-bold text-white' : '' }}">
+                    Barang Jadi
+                </a>
+            </div>
+        </div>
+        
         <a class="flex items-center px-4 py-2.5 mt-2 text-indigo-200 rounded-lg transition-colors duration-200 hover:bg-indigo-700 hover:text-white {{ $data['urlPath'] == 'transaction' ? 'bg-indigo-700 text-white' : '' }}" href="/transaction">
             <i class="fas fa-fw fa-exchange-alt"></i>
             <span class="mx-4 font-medium">Transaksi</span>
         </a>
-        @if(auth()->user()->role == 'admin')
+
+        @can('manage-production')
+        <a class="flex items-center px-4 py-2.5 mt-2 text-indigo-200 rounded-lg transition-colors duration-200 hover:bg-indigo-700 hover:text-white {{ $data['urlPath'] == 'production' ? 'bg-indigo-700 text-white' : '' }}" href="/production">
+            <i class="fas fa-fw fa-industry"></i>
+            <span class="mx-4 font-medium">Produksi</span>
+        </a>
+        @endcan
+        
+        @if(auth()->user()->role === 'admin')
         <a class="flex items-center px-4 py-2.5 mt-2 text-indigo-200 rounded-lg transition-colors duration-200 hover:bg-indigo-700 hover:text-white {{ $data['urlPath'] == 'user' ? 'bg-indigo-700 text-white' : '' }}" href="/user">
             <i class="fas fa-fw fa-users"></i>
             <span class="mx-4 font-medium">Pengguna</span>

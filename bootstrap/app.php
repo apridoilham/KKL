@@ -15,4 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })
+    // --> TAMBAHKAN BLOK INI <--
+    ->withProviders([
+        \Livewire\LivewireServiceProvider::class,
+    ])
+    ->create();

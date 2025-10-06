@@ -12,149 +12,88 @@ use Illuminate\Support\Facades\Hash;
 
 class DummyDataSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run(): void
     {
-        // Menonaktifkan pengecekan foreign key untuk proses truncate
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-
-        // Mengosongkan tabel untuk menghindari data duplikat setiap kali seeder dijalankan
         User::truncate();
         Item::truncate();
         Transaction::truncate();
-
-        // Mengaktifkan kembali foreign key checks
+        DB::table('bill_of_materials')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $this->command->info('Membuat data pengguna...');
         $this->createUsers();
 
-        $this->command->info('Membuat data barang dan transaksi...');
-        $this->createItemsAndTransactions();
+        $this->command->info('Membuat data barang mentah dan transaksi...');
+        $rawMaterials = $this->createRawMaterialsAndTransactions();
+        
+        $this->command->info('Membuat data barang jadi dan resep (BOM)...');
+        $this->createFinishedGoodsAndBom($rawMaterials);
 
         $this->command->info('Proses seeding data dummy selesai!');
     }
 
-    /**
-     * Membuat data pengguna awal.
-     */
     private function createUsers(): void
     {
-        // Pengguna Admin Utama
-        User::create([
-            'name' => 'Admin Utama',
-            'username' => 'admin',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'security_question' => 'Nama hewan peliharaan pertama?',
-            'security_answer' => Hash::make('admin'),
-        ]);
-
-        // Pengguna Staff Utama
-        User::create([
-            'name' => 'Staff Gudang',
-            'username' => 'staff',
-            'password' => Hash::make('password'),
-            'role' => 'staff',
-            'security_question' => 'Warna favorit?',
-            'security_answer' => Hash::make('staff'),
-        ]);
-
-        // Pengguna Staff Tambahan
-        User::create([
-            'name' => 'Budi Santoso',
-            'username' => 'budi',
-            'password' => Hash::make('password'),
-            'role' => 'staff',
-            'security_question' => 'Kota kelahiran?',
-            'security_answer' => Hash::make('jakarta'),
-        ]);
+        User::create(['name' => 'Admin Utama', 'username' => 'admin', 'password' => Hash::make('password'), 'role' => 'admin', 'security_question' => 'Nama hewan?', 'security_answer' => Hash::make('admin'),]);
+        User::create(['name' => 'Staff Produksi', 'username' => 'produksi', 'password' => Hash::make('password'), 'role' => 'produksi', 'security_question' => 'Warna favorit?', 'security_answer' => Hash::make('produksi'),]);
+        User::create(['name' => 'Staff Pengiriman', 'username' => 'pengiriman', 'password' => Hash::make('password'), 'role' => 'pengiriman', 'security_question' => 'Kota kelahiran?', 'security_answer' => Hash::make('pengiriman'),]);
     }
 
-    /**
-     * Membuat data master barang beserta histori transaksinya.
-     */
-    private function createItemsAndTransactions(): void
+    private function createRawMaterialsAndTransactions(): \Illuminate\Support\Collection
     {
-        // Daftar kategori dan item untuk data dummy
-        $itemCatalog = [
-            'Alat Tulis Kantor' => ['Kertas HVS A4 70gr', 'Pulpen Tinta Hitam', 'Spidol Whiteboard', 'Buku Tulis Hard Cover', 'Penghapus Papan Tulis'],
-            'Elektronik' => ['Mouse Wireless Logitech', 'Keyboard Mechanical', 'Monitor LED 24 inch', 'Kabel HDMI 3m', 'Webcam HD 1080p'],
-            'Perabotan' => ['Kursi Kantor Ergonomis', 'Meja Kerja Kayu', 'Lemari Arsip Besi', 'Lampu Meja Belajar', 'Papan Tulis Kaca'],
-            'Pantry & Konsumsi' => ['Kopi Sachet Instan', 'Gula Pasir 1kg', 'Teh Celup Kotak', 'Air Mineral Galon', 'Biskuit Kaleng'],
-            'Peralatan Kebersihan' => ['Cairan Pembersih Lantai', 'Kain Pel Microfiber', 'Sapu Ijuk', 'Tempat Sampah 20L', 'Pengharum Ruangan Otomatis'],
+        $rawItemsData = [
+            'Bahan Kue' => ['Tepung Terigu', 'Gula Pasir', 'Telur Ayam', 'Mentega'],
+            'Elektronik' => ['CPU Intel i7', 'RAM 16GB DDR4', 'SSD 1TB NVMe', 'Casing PC ATX'],
         ];
 
-        foreach ($itemCatalog as $category => $items) {
+        $createdItems = collect();
+
+        foreach ($rawItemsData as $category => $items) {
             foreach ($items as $itemName) {
-                // 1. Buat item dengan stok awal 0
                 $item = Item::create([
                     'name' => $itemName,
                     'category' => $category,
+                    'item_type' => 'barang_mentah',
                     'code' => strtoupper(substr($category, 0, 3)) . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT),
                     'quantity' => 0,
                     'status' => 'out',
-                    'created_at' => now()->subYear()->addDays(rand(1, 30)), // Dibuat acak dalam sebulan pertama tahun lalu
+                    'created_at' => now()->subMonths(rand(1, 6)),
                 ]);
 
-                $currentStock = 0;
-                $transactionDate = Carbon::instance($item->created_at)->addDay();
-
-                // 2. Buat transaksi pertama (barang masuk) untuk mengisi stok awal
-                $initialStock = rand(100, 250);
+                $initialStock = rand(500, 1000);
+                $item->increaseStock($initialStock);
                 Transaction::create([
                     'item_id' => $item->id,
-                    'type' => 'in',
+                    'type' => 'pembelian_masuk',
                     'quantity' => $initialStock,
-                    'description' => 'Stok awal',
-                    'created_at' => $transactionDate,
-                    'updated_at' => $transactionDate,
+                    'description' => 'Stok awal dari pemasok',
+                    'created_at' => $item->created_at->addDay(),
                 ]);
-                $currentStock = $initialStock;
-                $transactionDate->addDays(rand(1, 7)); // Maju beberapa hari untuk transaksi berikutnya
-
-                // 3. Buat 15-40 transaksi acak untuk setiap barang
-                for ($i = 0; $i < rand(15, 40); $i++) {
-                    // Tentukan tipe transaksi secara acak (lebih banyak keluar daripada masuk)
-                    $type = ['in', 'out', 'out', 'damaged', 'out'][rand(0, 4)];
-
-                    if ($transactionDate->isAfter(now())) {
-                        break; // Jangan buat transaksi di masa depan
-                    }
-
-                    if ($type === 'in') {
-                        $quantity = rand(20, 50);
-                        $currentStock += $quantity;
-                        $description = 'Penambahan stok';
-                    } else { // 'out' atau 'damaged'
-                        if ($currentStock < 5) continue; // Lewati jika stok hampir habis
-                        $quantity = rand(1, min(15, floor($currentStock * 0.5))); // Ambil maksimal setengah stok
-                        $currentStock -= $quantity;
-                        $description = $type === 'out' ? 'Penggunaan operasional' : 'Barang ditemukan rusak';
-                    }
-
-                    Transaction::create([
-                        'item_id' => $item->id,
-                        'type' => $type,
-                        'quantity' => $quantity,
-                        'description' => $description,
-                        'created_at' => $transactionDate,
-                        'updated_at' => $transactionDate,
-                    ]);
-
-                    // Majukan tanggal untuk transaksi berikutnya
-                    $transactionDate->addDays(rand(3, 15));
-                }
-
-                // 4. Update total kuantitas dan status akhir di tabel items
-                $item->quantity = $currentStock;
-                $item->status = $currentStock > 0 ? 'available' : 'out';
-                $item->save();
+                $createdItems->push($item);
             }
         }
+        return $createdItems;
+    }
+
+    private function createFinishedGoodsAndBom(\Illuminate\Support\Collection $rawMaterials): void
+    {
+        // Barang Jadi 1: Kue Bolu
+        $kue = Item::create(['name' => 'Kue Bolu', 'category' => 'Makanan Jadi', 'item_type' => 'barang_jadi', 'code' => 'PROD-KUE01']);
+        $kue->bomRawMaterials()->attach([
+            $rawMaterials->firstWhere('name', 'Tepung Terigu')->id => ['quantity_required' => 0.5], // 0.5 kg
+            $rawMaterials->firstWhere('name', 'Gula Pasir')->id => ['quantity_required' => 0.3], // 0.3 kg
+            $rawMaterials->firstWhere('name', 'Telur Ayam')->id => ['quantity_required' => 4], // 4 butir
+            $rawMaterials->firstWhere('name', 'Mentega')->id => ['quantity_required' => 0.2], // 0.2 kg
+        ]);
+
+        // Barang Jadi 2: Komputer Rakitan
+        $komputer = Item::create(['name' => 'PC Gaming Rakitan', 'category' => 'Elektronik Jadi', 'item_type' => 'barang_jadi', 'code' => 'PROD-PC01']);
+        $komputer->bomRawMaterials()->attach([
+            $rawMaterials->firstWhere('name', 'CPU Intel i7')->id => ['quantity_required' => 1],
+            $rawMaterials->firstWhere('name', 'RAM 16GB DDR4')->id => ['quantity_required' => 2],
+            $rawMaterials->firstWhere('name', 'SSD 1TB NVMe')->id => ['quantity_required' => 1],
+            $rawMaterials->firstWhere('name', 'Casing PC ATX')->id => ['quantity_required' => 1],
+        ]);
     }
 }

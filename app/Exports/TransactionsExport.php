@@ -2,13 +2,16 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromCollection; // Ganti FromQuery menjadi FromCollection
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\BeforeSheet;
 
-class TransactionsExport implements FromCollection, WithHeadings, WithMapping
+class TransactionsExport implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
     protected $data;
+    private $rowNumber = 0;
 
     public function __construct($data)
     {
@@ -23,7 +26,7 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
-            'No', // Ganti 'ID Transaksi' menjadi 'No'
+            'No',
             'Nama Barang',
             'Kategori Barang',
             'Tipe',
@@ -35,17 +38,24 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping
 
     public function map($transaction): array
     {
-        static $rowNumber = 0; // Buat variabel statis untuk nomor urut
-        $rowNumber++;
-
+        $this->rowNumber++;
         return [
-            $rowNumber, // Tambahkan nomor urut
+            $this->rowNumber,
             $transaction->item->name,
             $transaction->item->category,
             ucfirst($transaction->type),
             $transaction->quantity,
             $transaction->description,
             $transaction->created_at->format('Y-m-d H:i:s'),
+        ];
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            BeforeSheet::class => function(BeforeSheet $event) {
+                $this->rowNumber = 0; // Reset nomor baris sebelum sheet dibuat
+            },
         ];
     }
 }

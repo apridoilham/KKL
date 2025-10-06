@@ -1,12 +1,11 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Http\Livewire;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Auth\Access\AuthorizationException;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Validation\Rule;
@@ -24,12 +23,15 @@ class UserComponent extends Component
     public bool $isModalOpen = false;
     public bool $isEditMode = false;
 
+    // Properti untuk filter peran
+    public string $filterRole = 'all';
+
     protected function rules()
     {
         $rules = [
             'name' => 'required|string|max:255',
             'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($this->userId)],
-            'role' => 'required|in:admin,staff',
+            'role' => 'required|in:admin,produksi,pengiriman',
         ];
         if (!$this->isEditMode) {
             $rules['password'] = 'required|string|min:6|confirmed';
@@ -41,15 +43,22 @@ class UserComponent extends Component
 
     public function mount(): void
     {
-        if (Gate::denies('manage-users')) {
-            abort(403);
-        }
+        // Otorisasi saat komponen pertama kali dimuat
+        Gate::authorize('manage-users');
         $this->data = ['title' => 'Manajemen Pengguna', 'urlPath' => 'user'];
     }
-    
+
+    public function updated($property): void
+    {
+        if (in_array($property, ['search', 'filterRole'])) {
+            $this->resetPage();
+        }
+    }
+
     private function clearStatsCache(): void
     {
-        Cache::forget('stats:total_users');
+        // Menghapus cache spesifik yang relevan
+        Cache::forget('dashboard-stats-all_time-');
     }
 
     public function resetInputFields(): void
@@ -59,12 +68,16 @@ class UserComponent extends Component
 
     public function create(): void
     {
+        // Otorisasi untuk tindakan membuat pengguna
+        Gate::authorize('manage-users');
         $this->resetInputFields();
         $this->isModalOpen = true;
     }
 
     public function edit(int $id): void
     {
+        // Otorisasi untuk tindakan mengedit pengguna
+        Gate::authorize('manage-users');
         $user = User::findOrFail($id);
         $this->userId = $id;
         $this->name = $user->name;
@@ -76,16 +89,20 @@ class UserComponent extends Component
 
     public function store(): void
     {
-        $validatedData = $this->validate();
+        // Otorisasi untuk tindakan menyimpan (baik baru maupun update)
+        Gate::authorize('manage-users');
+        $this->validate();
+
         $userData = [
-            'name' => $validatedData['name'],
-            'username' => $validatedData['username'],
-            'role' => $validatedData['role'],
+            'name' => $this->name,
+            'username' => $this->username,
+            'role' => $this->role,
         ];
-        if (!empty($validatedData['password'])) {
-            $userData['password'] = Hash::make($validatedData['password']);
+        if (!empty($this->password)) {
+            $userData['password'] = Hash::make($this->password);
         }
         User::updateOrCreate(['id' => $this->userId], $userData);
+
         $this->clearStatsCache();
         $this->dispatch('toast', [
             'status' => 'success',
@@ -96,6 +113,8 @@ class UserComponent extends Component
 
     public function delete(int $id): void
     {
+        // Otorisasi untuk tindakan menghapus pengguna
+        Gate::authorize('manage-users');
         if ($id == auth()->id()) {
             $this->dispatch('toast', ['status' => 'failed', 'message' => 'Anda tidak dapat menghapus akun Anda sendiri.']);
             return;
@@ -107,11 +126,17 @@ class UserComponent extends Component
 
     public function render()
     {
-        $users = User::query()
+        $usersQuery = User::query()
             ->where(fn($query) => $query->where('name', 'like', '%' . $this->search . '%')
-                ->orWhere('username', 'like', '%' . $this->search . '%'))
-            ->latest()
-            ->paginate($this->perPage);
+                ->orWhere('username', 'like', '%' . $this->search . '%'));
+
+        // Tambahkan filter berdasarkan peran
+        $usersQuery->when($this->filterRole !== 'all', function ($query) {
+            return $query->where('role', $this->filterRole);
+        });
+
+        $users = $usersQuery->latest()->paginate($this->perPage);
+
         return view('livewire.user', ['users' => $users])->layout('components.layouts.app', ['data' => $this->data]);
     }
 }

@@ -8,6 +8,7 @@ use App\Traits\BuildsReportQuery;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controller; // Menggunakan base controller dari framework
 
 class ReportDownloadController extends Controller
 {
@@ -16,7 +17,7 @@ class ReportDownloadController extends Controller
     public function download(Request $request, string $type)
     {
         $validated = $request->validate([
-            'filter' => 'required|in:item,in,out,damaged',
+            'filter' => 'required|in:item,in,out,damaged,pembelian_masuk,produksi_masuk,produksi_keluar,pengiriman_keluar,rusak',
             'filterBy' => 'required|in:date,month,year',
             'dateFrom' => 'nullable|date',
             'dateUntil' => 'nullable|date',
@@ -29,9 +30,12 @@ class ReportDownloadController extends Controller
         $filterBy = $validated['filterBy'];
 
         $query = $this->buildReportQuery($filter, $filterBy, $validated);
-        $data = $query->get(); // Fetch data menjadi collection
+        $data = $query->get();
 
         $fileName = 'laporan-' . $filter . '-' . now()->format('Y-m-d') . '.' . $type;
+
+        // Tentukan kelas Export sekali saja
+        $exportClass = $filter === 'item' ? new ItemsExport($data) : new TransactionsExport($data);
 
         switch ($type) {
             case 'pdf':
@@ -40,16 +44,10 @@ class ReportDownloadController extends Controller
                 return $pdf->download($fileName);
 
             case 'xlsx':
-                // Kirim collection data ke export class
-                $export = $filter === 'item' ? new ItemsExport($data) : new TransactionsExport($data);
-                return Excel::download($export, $fileName);
-                
-            case 'csv':
-                 // Kirim collection data ke export class
-                $export = $filter === 'item' ? new ItemsExport($data) : new TransactionsExport($data);
-                return Excel::download($export, $fileName, \Maatwebsite\Excel\Excel::CSV);
-        }
+                return Excel::download($exportClass, $fileName);
 
-        return redirect()->back();
+            case 'csv':
+                return Excel::download($exportClass, $fileName, \Maatwebsite\Excel\Excel::CSV);
+        }
     }
 }

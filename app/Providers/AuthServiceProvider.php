@@ -22,13 +22,22 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Fungsi trim() akan menghapus spasi di awal/akhir
-        // Fungsi strtolower() akan mengubah semua menjadi huruf kecil
-        $checkAdmin = fn(User $user) => strtolower(trim($user->role)) === 'admin';
+        // Fungsi helper untuk membersihkan dan mengecek role
+        $checkRole = fn($user, $roles) => in_array(strtolower(trim($user->role)), (array)$roles);
 
-        Gate::define('is-admin', $checkAdmin);
-        Gate::define('delete-item', $checkAdmin);
-        Gate::define('delete-transaction', $checkAdmin);
-        Gate::define('manage-users', $checkAdmin);
+        // Hanya Admin yang bisa mengelola pengguna
+        Gate::define('manage-users', fn(User $user) => $checkRole($user, 'admin'));
+
+        // Hanya Admin yang bisa mengelola data master barang (tambah, ubah, hapus)
+        Gate::define('manage-items', fn(User $user) => $checkRole($user, 'admin'));
+
+        // Admin DAN Staff Pengiriman yang bisa mengelola transaksi manual
+        Gate::define('manage-transactions', fn(User $user) => $checkRole($user, ['admin', 'pengiriman']));
+
+        // Admin DAN Staff Produksi yang bisa mengelola produksi
+        Gate::define('manage-production', fn(User $user) => $checkRole($user, ['admin', 'produksi']));
+
+        // Semua role bisa melihat halaman-halaman dasar
+        Gate::define('view-pages', fn(User $user) => $checkRole($user, ['admin', 'produksi', 'pengiriman']));
     }
 }

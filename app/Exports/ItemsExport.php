@@ -2,30 +2,31 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromCollection; // Ganti FromQuery menjadi FromCollection
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\BeforeSheet;
 
-class ItemsExport implements FromCollection, WithHeadings, WithMapping
+class ItemsExport implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
     protected $data;
+    private $rowNumber = 0;
 
     public function __construct($data)
     {
         $this->data = $data;
     }
 
-    // Mengambil data dari collection yang sudah di-fetch
     public function collection()
     {
         return $this->data;
     }
 
-    // Menentukan judul kolom (header)
     public function headings(): array
     {
         return [
-            'No', // Ganti 'ID' menjadi 'No'
+            'No',
             'Kode Barang',
             'Kategori',
             'Nama Barang',
@@ -35,20 +36,26 @@ class ItemsExport implements FromCollection, WithHeadings, WithMapping
         ];
     }
 
-    // Memetakan data dari setiap baris
     public function map($item): array
     {
-        static $rowNumber = 0; // Buat variabel statis untuk nomor urut
-        $rowNumber++;
-
+        $this->rowNumber++;
         return [
-            $rowNumber, // Tambahkan nomor urut
+            $this->rowNumber,
             $item->code,
             $item->category,
             $item->name,
             $item->quantity,
             $item->status === 'available' ? 'Tersedia' : 'Habis',
             $item->created_at->format('Y-m-d H:i:s'),
+        ];
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            BeforeSheet::class => function(BeforeSheet $event) {
+                $this->rowNumber = 0; // Reset nomor baris sebelum sheet dibuat
+            },
         ];
     }
 }

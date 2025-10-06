@@ -4,35 +4,33 @@ namespace App\Models;
 
 use Exception;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany; // Tambahkan ini
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Item extends Model
 {
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'code',
         'category',
         'name',
+        'item_type',
         'quantity',
         'status',
     ];
 
-    /**
-     * Mendefinisikan relasi one-to-many ke tabel transactions.
-     */
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
     }
 
-    /**
-     * Menambah jumlah stok barang.
-     * @param int $amount Jumlah yang akan ditambahkan
-     */
+    // PENAMBAHAN: Relasi untuk mengambil daftar "resep" (bahan mentah)
+    public function bomRawMaterials(): BelongsToMany
+    {
+        return $this->belongsToMany(Item::class, 'bill_of_materials', 'finished_good_id', 'raw_material_id')
+                    ->withPivot('quantity_required') // Sertakan jumlah yang dibutuhkan
+                    ->withTimestamps();
+    }
+
     public function increaseStock(int $amount): void
     {
         $this->quantity += $amount;
@@ -40,11 +38,6 @@ class Item extends Model
         $this->save();
     }
 
-    /**
-     * Mengurangi jumlah stok barang.
-     * @param int $amount Jumlah yang akan dikurangi
-     * @throws Exception jika stok tidak mencukupi
-     */
     public function decreaseStock(int $amount): void
     {
         if ($this->quantity < $amount) {

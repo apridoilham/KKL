@@ -1,101 +1,92 @@
 <div class="container-fluid px-4 md:px-6 py-6">
 
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
         <div>
             <h1 class="text-3xl font-extrabold text-slate-800">Halo, {{ auth()->user()->name }}! 👋</h1>
             <p class="mt-1 text-slate-600">Selamat datang kembali, berikut ringkasan inventaris Anda.</p>
         </div>
         <div class="flex items-center space-x-3 mt-4 md:mt-0">
-            {{-- Tombol Ubah Data --}}
-            <button wire:click="$set('isModalOpenData', true)" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
-                <i class="fas fa-edit fa-fw mr-2 text-slate-500"></i>
-                Ubah Data
+            <button wire:click="$set('isModalOpenData', true)" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50">
+                <i class="fas fa-edit fa-fw mr-2 text-slate-500"></i> Ubah Data
             </button>
-
-            {{-- Tombol Ubah Password --}}
-            <button wire:click="$set('isModalOpen', true)" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
-                <i class="fas fa-key fa-fw mr-2 text-slate-500"></i>
-                Ubah Password
+            <button wire:click="$set('isModalOpen', true)" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50">
+                <i class="fas fa-key fa-fw mr-2 text-slate-500"></i> Ubah Password
             </button>
         </div>
     </div>
 
-    @if (session()->has('dataSession'))
-        <div class="alert alert-{{ session('dataSession')['status'] == 'success' ? 'success' : 'danger' }} alert-dismissible fade show mb-6" role="alert">
-            {{ session('dataSession')['message'] }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
+    <div class="bg-white rounded-xl shadow-lg p-4 mb-6">
+        <div class="flex flex-wrap items-center gap-4">
+            <div class="flex-shrink-0">
+                <label for="filterType" class="text-sm font-medium text-slate-700">Tampilkan Data:</label>
+            </div>
+            <div class="w-full sm:w-48">
+                <select wire:model.live="filterType" id="filterType" class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    <option value="all_time">Semua Waktu</option>
+                    <option value="daily">Harian</option>
+                    <option value="monthly">Bulanan</option>
+                    <option value="yearly">Tahunan</option>
+                </select>
+            </div>
+            
+            @if($filterType === 'daily')
+                <div class="w-full sm:w-48">
+                    <input wire:model.live="filterDate" type="date" class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                </div>
+            @elseif($filterType === 'monthly')
+                <div class="w-full sm:w-48">
+                    <input wire:model.live="filterMonth" type="month" class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                </div>
+            @elseif($filterType === 'yearly')
+                <div class="w-full sm:w-48">
+                    <input wire:model.live="filterYear" type="number" class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Tahun...">
+                </div>
+            @endif
+            
+            <button wire:click="resetFilters" class="px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50">Reset</button>
         </div>
-    @endif
+    </div>
     
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-slate-500">Total Jenis Barang</p>
-                    <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalItems }}</p>
-                </div>
-                <div class="text-2xl text-teal-500"><i class="fas fa-boxes"></i></div>
-            </div>
+    <div class="relative">
+        <div wire:loading.flex wire:target="loadDashboardData, resetFilters" class="absolute inset-0 bg-white bg-opacity-75 z-10 flex items-center justify-center rounded-2xl">
+            <i class="fas fa-spinner fa-spin text-indigo-500 text-3xl"></i>
         </div>
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-slate-500">Total Stok Tersedia</p>
-                    <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalStock }}</p>
-                </div>
-                <div class="text-2xl text-indigo-500"><i class="fas fa-warehouse"></i></div>
-            </div>
-        </div>
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-slate-500">Total Pengguna</p>
-                    <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalUsers }}</p>
-                </div>
-                <div class="text-2xl text-sky-500"><i class="fas fa-users"></i></div>
-            </div>
-        </div>
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-slate-500">Total Barang Masuk</p>
-                    <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalIn }}</p>
-                </div>
-                <div class="text-2xl text-green-500"><i class="fas fa-arrow-down"></i></div>
-            </div>
-        </div>
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-slate-500">Total Barang Keluar</p>
-                    <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalOut }}</p>
-                </div>
-                <div class="text-2xl text-yellow-500"><i class="fas fa-arrow-up"></i></div>
-            </div>
-        </div>
-        <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-slate-500">Total Barang Rusak</p>
-                    <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalDamaged }}</p>
-                </div>
-                <div class="text-2xl text-red-500"><i class="fas fa-exclamation-triangle"></i></div>
-            </div>
-        </div>
-    </div>
 
-    {{-- PERBAIKAN: Membungkus seluruh area grafik dengan div wire:ignore --}}
-    <div wire:ignore>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-lg border">
+                <p class="text-sm font-medium text-slate-500">Total Jenis Barang</p>
+                <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalItems }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg border">
+                <p class="text-sm font-medium text-slate-500">Total Stok Tersedia</p>
+                <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalStock }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg border">
+                <p class="text-sm font-medium text-slate-500">Total Pengguna</p>
+                <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalUsers }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg border">
+                <p class="text-sm font-medium text-slate-500">Total Barang Masuk</p>
+                <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalIn }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg border">
+                <p class="text-sm font-medium text-slate-500">Total Barang Keluar</p>
+                <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalOut }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg border">
+                <p class="text-sm font-medium text-slate-500">Total Barang Rusak</p>
+                <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalDamaged }}</p>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg">
-                <h3 class="font-bold text-slate-800 mb-4">5 Barang Stok Tertinggi</h3>
+                <h3 class="font-bold text-slate-800 mb-4">5 Barang Paling Aktif</h3>
                 <div class="h-80"><canvas id="topStockChart"></canvas></div>
             </div>
             <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white p-6 rounded-2xl shadow-lg">
-                    <h3 class="font-bold text-slate-800 mb-4">Stok per Kategori</h3>
+                    <h3 class="font-bold text-slate-800 mb-4">Volume Transaksi per Kategori</h3>
                     <div class="h-64"><canvas id="categoryChart"></canvas></div>
                 </div>
                 <div class="bg-white p-6 rounded-2xl shadow-lg">
@@ -105,7 +96,6 @@
             </div>
         </div>
     </div>
-    {{-- AKHIR PERBAIKAN --}}
 
     @if($isModalOpenData)
     <div x-data="{ show: @entangle('isModalOpenData') }" x-show="show" x-transition.opacity.duration.300ms class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
@@ -161,46 +151,47 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
 <script>
-    // PERBAIKAN: Mengganti event listener ke 'DOMContentLoaded' yang lebih standar
-    document.addEventListener('DOMContentLoaded', () => {
+    function initDashboardCharts(data) {
+        if (window.dashboardCharts) {
+            Object.values(window.dashboardCharts).forEach(chart => chart.destroy());
+        }
+        window.dashboardCharts = {};
+
         Chart.defaults.color = '#64748b';
         Chart.defaults.borderColor = 'rgba(0, 0, 0, 0.05)';
-        
-        const renderCharts = () => {
-            if (window.myCharts) {
-                Object.values(window.myCharts).forEach(chart => chart.destroy());
-            }
-            window.myCharts = {};
 
-            const ctxCategory = document.getElementById('categoryChart');
-            if (ctxCategory) {
-                window.myCharts.categoryChart = new Chart(ctxCategory, {
-                    type: 'polarArea',
-                    data: { labels: @json($categoryLabels), datasets: [{ data: @json($categoryData), backgroundColor: @json($chartPalette1) }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-                });
-            }
+        window.dashboardCharts.topStockChart = new Chart(document.getElementById('topStockChart'), {
+            type: 'bar',
+            data: { labels: data.topStockLabels, datasets: [{ label: 'Stok', data: data.topStockData, backgroundColor: data.chartPalette1, borderRadius: 4 }] },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } }
+        });
 
-            const ctxTransaction = document.getElementById('transactionTrendChart');
-            if (ctxTransaction) {
-                window.myCharts.transactionTrendChart = new Chart(ctxTransaction, {
-                    type: 'doughnut',
-                    data: { labels: @json($trendLabels), datasets: [{ data: @json($trendData), backgroundColor: ['#28a745', '#ffc107', '#dc3545'], borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
-                });
-            }
+        window.dashboardCharts.categoryChart = new Chart(document.getElementById('categoryChart'), {
+            type: 'polarArea',
+            data: { labels: data.categoryLabels, datasets: [{ data: data.categoryData, backgroundColor: data.chartPalette1 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
 
-            const ctxTopStock = document.getElementById('topStockChart');
-            if (ctxTopStock) {
-                window.myCharts.topStockChart = new Chart(ctxTopStock, {
-                    type: 'bar',
-                    data: { labels: @json($topStockLabels), datasets: [{ label: 'Stok', data: @json($topStockData), backgroundColor: @json($chartPalette1), borderRadius: 4 }] },
-                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } }
-                });
-            }
-        };
-        
-        renderCharts();
+        window.dashboardCharts.transactionTrendChart = new Chart(document.getElementById('transactionTrendChart'), {
+            type: 'doughnut',
+            data: { labels: data.trendLabels, datasets: [{ data: data.trendData, backgroundColor: ['#28a745', '#ffc107', '#dc3545'], borderWidth: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    initDashboardCharts({
+        topStockLabels: @json($topStockLabels), topStockData: @json($topStockData),
+        categoryLabels: @json($categoryLabels), categoryData: @json($categoryData),
+        trendLabels: @json($trendLabels), trendData: @json($trendData),
+        chartPalette1: @json($chartPalette1)
     });
 </script>
 @endpush
+
+@script
+<script>
+    $wire.on('charts-updated', (event) => {
+        initDashboardCharts(event);
+    });
+</script>
+@endscript

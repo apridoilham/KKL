@@ -1,46 +1,29 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Http\Livewire;
 
-use App\Models\Item;
-use App\Models\Transaction;
-use Illuminate\Database\Eloquent\Builder;
+use App\Traits\BuildsReportQuery; // Import trait
 use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 
 class ReportPrintComponent extends Component
 {
+    use BuildsReportQuery; // Gunakan trait
+
     public $reportData;
     public string $titleData = 'Laporan Inventaris';
     public array $data;
     public string $filter, $filterBy;
     public array $params;
 
-    private function buildReportQuery(string $filter, string $filterBy, array $params): Builder
-    {
-        $query = $filter === 'item' ? Item::query() : Transaction::with('item')->where('type', $filter);
-        switch ($filterBy) {
-            case 'date':
-                $query->whereBetween('created_at', [$params['dateFrom'], $params['dateUntil']]);
-                break;
-            case 'month':
-                $query->whereYear('created_at', $params['selectYear'])
-                    ->whereMonth('created_at', '>=', $params['monthFrom'])
-                    ->whereMonth('created_at', '<=', $params['monthUntil']);
-                break;
-            case 'year':
-                $query->whereYear('created_at', $params['selectYear']);
-                break;
-        }
-        return $query->orderByDesc('created_at');
-    }
+    // HAPUS metode buildReportQuery karena sudah ada di trait
 
     public function mount(): void
     {
         $this->data = ['title' => 'Cetak Laporan', 'urlPath' => 'report'];
         $requestData = request()->query();
         $validator = Validator::make($requestData, [
-            'filter' => 'required|in:item,in,out,damaged',
+            'filter' => 'required|in:item,in,out,damaged,pembelian_masuk,produksi_masuk,produksi_keluar,pengiriman_keluar,rusak',
             'filterBy' => 'required|in:date,month,year',
             'dateFrom' => 'required_if:filterBy,date|date',
             'dateUntil' => 'required_if:filterBy,date|date',

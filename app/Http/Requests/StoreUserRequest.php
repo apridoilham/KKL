@@ -12,8 +12,8 @@ class StoreUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Otorisasi bisa diatur di sini, misalnya hanya admin yang boleh
-        return auth()->user()->role === 'admin';
+        // Menggunakan Gate yang sudah terdefinisi untuk konsistensi
+        return auth()->user()->can('manage-users');
     }
 
     /**
@@ -23,21 +23,22 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Mendapatkan userId dari route atau input untuk aturan unique
-        $userId = $this->input('userId'); 
+        // Mengambil ID pengguna dari parameter route, bukan input.
+        // Misal: route('users.update', $user) -> /users/1
+        $userId = $this->route('user') ? $this->route('user')->id : null;
 
-        $rules = [
+        return [
             'name' => 'required|string|max:255',
             'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($userId)],
-            'role' => 'required|in:admin,staff',
+            'role' => 'required|in:admin,produksi,pengiriman',
+            'password' => [
+                // 'required' jika ini adalah request pembuatan (userId null), 'nullable' jika edit.
+                Rule::requiredIf(!$userId),
+                'nullable',
+                'string',
+                'min:6',
+                'confirmed',
+            ],
         ];
-
-        if ($userId) { // Mode edit
-            $rules['password'] = 'nullable|string|min:6|confirmed';
-        } else { // Mode create
-            $rules['password'] = 'required|string|min:6|confirmed';
-        }
-
-        return $rules;
     }
 }

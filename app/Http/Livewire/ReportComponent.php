@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Http\Livewire;
 
-use App\Models\Item;
-use App\Models\Transaction;
+use App\Traits\BuildsReportQuery; // Import trait
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
 
 class ReportComponent extends Component
 {
+    use BuildsReportQuery; // Gunakan trait
+
     public array $data;
     public string $filter = '';
     public string $filterBy = '';
@@ -37,27 +37,8 @@ class ReportComponent extends Component
         $this->monthFrom = 1;
         $this->monthUntil = 12;
     }
-    
-    private function buildReportQuery(string $filter, string $filterBy, array $params): Builder
-    {
-        $query = $filter === 'item'
-            ? Item::query()
-            : Transaction::with('item')->where('type', $filter);
-        switch ($filterBy) {
-            case 'date':
-                $query->whereBetween('created_at', [$params['dateFrom'], $params['dateUntil']]);
-                break;
-            case 'month':
-                $query->whereYear('created_at', $params['selectYear'])
-                    ->whereMonth('created_at', '>=', $params['monthFrom'])
-                    ->whereMonth('created_at', '<=', $params['monthUntil']);
-                break;
-            case 'year':
-                $query->whereYear('created_at', $params['selectYear']);
-                break;
-        }
-        return $query->orderByDesc('created_at');
-    }
+
+    // HAPUS metode buildReportQuery karena sudah ada di trait
 
     public function generatePreview(): void
     {
@@ -72,9 +53,11 @@ class ReportComponent extends Component
             $rules = ['selectYear' => 'required|integer'];
         }
         $validated = $this->validate($rules);
+        
         $dataFound = $this->buildReportQuery($this->filter, $this->filterBy, array_merge($validated, [
             'monthFrom' => $this->monthFrom, 'monthUntil' => $this->monthUntil, 'selectYear' => $this->selectYear
         ]))->get();
+
         if ($dataFound->isNotEmpty()) {
             $this->reportData = $dataFound;
         } else {

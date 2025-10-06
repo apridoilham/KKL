@@ -5,25 +5,32 @@
             <h1 class="text-3xl font-extrabold text-slate-800">Manajemen Pengguna</h1>
             <p class="mt-1 text-slate-600">Tambah, ubah, atau hapus data pengguna sistem.</p>
         </div>
-        <div class="flex items-center space-x-3 mt-4 md:mt-0 w-full md:w-auto">
-            <div class="relative w-full md:w-64">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-slate-400"></i></div>
-                <input wire:model.live.debounce.300ms="search" type="text" class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg bg-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Cari pengguna...">
-            </div>
-            <button wire:click="create" class="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+        <div class="mt-4 md:mt-0">
+             <button wire:click="create" class="inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
                 <i class="fas fa-plus mr-2"></i>
                 Tambah Pengguna
             </button>
         </div>
     </div>
     
-    @if (session()->has('dataSession'))
-        <div class="bg-{{ session('dataSession')['status'] == 'success' ? 'green' : 'red' }}-100 border-l-4 border-{{ session('dataSession')['status'] == 'success' ? 'green' : 'red' }}-500 text-{{ session('dataSession')['status'] == 'success' ? 'green' : 'red' }}-700 p-4 mb-6 rounded-md" role="alert">
-            <p class="font-bold">{{ ucfirst(session('dataSession')['status']) }}</p>
-            <p>{{ session('dataSession')['message'] }}</p>
+    <div class="bg-white rounded-xl shadow-lg p-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="text-xs font-semibold text-slate-500">Filter Berdasarkan Peran</label>
+                <select wire:model.live="filterRole" class="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700">
+                    <option value="all">Semua Peran</option>
+                    <option value="admin">Admin (Staff Gudang)</option>
+                    <option value="produksi">Staff Produksi</option>
+                    <option value="pengiriman">Staff Pengiriman</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs font-semibold text-slate-500">Pencarian Nama / Username</label>
+                <input wire:model.live.debounce.300ms="search" type="text" class="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3" placeholder="Cari pengguna...">
+            </div>
         </div>
-    @endif
-
+    </div>
+    
     <div class="bg-white rounded-xl shadow-lg overflow-hidden">
         <div class="overflow-x-auto">
             <table class="min-w-full text-sm text-left text-slate-500">
@@ -42,7 +49,15 @@
                             <td class="px-6 py-4 font-semibold text-slate-900">{{ $user->name }}</td>
                             <td class="px-6 py-4">{{ $user->username }}</td>
                             <td class="px-6 py-4">
-                                <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $user->role == 'admin' ? 'bg-indigo-100 text-indigo-800' : 'bg-sky-100 text-sky-800' }}">
+                                @php
+                                    $roleClass = match(strtolower($user->role)) {
+                                        'admin' => 'bg-indigo-100 text-indigo-800',
+                                        'produksi' => 'bg-amber-100 text-amber-800',
+                                        'pengiriman' => 'bg-sky-100 text-sky-800',
+                                        default => 'bg-gray-100 text-gray-800',
+                                    };
+                                @endphp
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $roleClass }}">
                                     {{ ucfirst($user->role) }}
                                 </span>
                             </td>
@@ -57,7 +72,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="text-center py-16"><h3 class="text-lg font-semibold">Pengguna Tidak Ditemukan</h3></td></tr>
+                        <tr><td colspan="5" class="text-center py-16">Tidak ada pengguna ditemukan.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -75,7 +90,16 @@
                         <div><label for="name" class="text-xs font-semibold text-slate-500 uppercase">Nama Lengkap <span class="text-red-500">*</span></label><input wire:model="name" type="text" id="name" class="mt-1 block w-full bg-transparent border-0 border-b-2 border-slate-200 p-0 pb-2 focus:ring-0 focus:border-indigo-500" required>@error('name')<span class="text-red-500 text-xs">{{$message}}</span>@enderror</div>
                         <div class="grid grid-cols-2 gap-6">
                             <div><label for="username" class="text-xs font-semibold text-slate-500 uppercase">Username <span class="text-red-500">*</span></label><input wire:model="username" type="text" id="username" class="mt-1 block w-full bg-transparent border-0 border-b-2 border-slate-200 p-0 pb-2 focus:ring-0 focus:border-indigo-500" required>@error('username')<span class="text-red-500 text-xs">{{$message}}</span>@enderror</div>
-                            <div><label for="role" class="text-xs font-semibold text-slate-500 uppercase">Peran (Role) <span class="text-red-500">*</span></label><select wire:model="role" id="role" class="mt-1 block w-full bg-transparent border-0 border-b-2 border-slate-200 p-0 pb-2 focus:ring-0 focus:border-indigo-500" required><option value="">-- Pilih Peran --</option><option value="admin">Admin</option><option value="staff">Staff</option></select>@error('role')<span class="text-red-500 text-xs">{{$message}}</span>@enderror</div>
+                            <div>
+                                <label for="role" class="text-xs font-semibold text-slate-500 uppercase">Peran (Role) <span class="text-red-500">*</span></label>
+                                <select wire:model="role" id="role" class="mt-1 block w-full bg-transparent border-0 border-b-2 border-slate-200 p-0 pb-2 focus:ring-0 focus:border-indigo-500" required>
+                                    <option value="">-- Pilih Peran --</option>
+                                    <option value="admin">Admin (Staff Gudang)</option>
+                                    <option value="produksi">Staff Produksi</option>
+                                    <option value="pengiriman">Staff Pengiriman</option>
+                                </select>
+                                @error('role')<span class="text-red-500 text-xs">{{$message}}</span>@enderror
+                            </div>
                         </div>
                         <hr/>
                         <div><p class="text-sm text-slate-500">{{ $isEditMode ? 'Kosongkan jika tidak ingin mengubah password.' : 'Password default untuk pengguna baru.' }}</p></div>
