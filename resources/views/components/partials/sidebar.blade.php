@@ -55,18 +55,21 @@
         </a>
         @endcan
         
-        @if(auth()->user()->role === 'admin')
+        @can('manage-users')
         <a class="flex items-center px-4 py-2.5 mt-2 text-indigo-200 rounded-lg transition-colors duration-200 hover:bg-indigo-700 hover:text-white {{ $data['urlPath'] == 'user' ? 'bg-indigo-700 text-white' : '' }}" href="/user">
             <i class="fas fa-fw fa-users"></i>
             <span class="mx-4 font-medium">Pengguna</span>
         </a>
-        @endif
+        @endcan
 
-        <p class="px-4 mt-6 mb-2 text-xs font-semibold tracking-wider text-indigo-400 uppercase">Laporan</p>
+        {{-- Judul "Laporan" hanya akan tampil jika pengguna bisa melihat laporannya --}}
+        @can('view-reports')
+            <p class="px-4 mt-6 mb-2 text-xs font-semibold tracking-wider text-indigo-400 uppercase">Laporan</p>
 
-        <a class="flex items-center px-4 py-2.5 mt-2 text-indigo-200 rounded-lg transition-colors duration-200 hover:bg-indigo-700 hover:text-white {{ $data['urlPath'] == 'report' ? 'bg-indigo-700 text-white' : '' }}" href="/report">
-            <i class="fas fa-fw fa-chart-line"></i>
-            <span class="mx-4 font-medium">Laporan</span>
-        </a>
+            <a class="flex items-center px-4 py-2.5 mt-2 text-indigo-200 rounded-lg transition-colors duration-200 hover:bg-indigo-700 hover:text-white {{ $data['urlPath'] == 'report' ? 'bg-indigo-700 text-white' : '' }}" href="/report">
+                <i class="fas fa-fw fa-chart-line"></i>
+                <span class="mx-4 font-medium">Laporan</span>
+            </a>
+        @endcan
     </nav>
 </div>

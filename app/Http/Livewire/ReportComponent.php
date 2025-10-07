@@ -2,13 +2,14 @@
 
 namespace App\Http\Livewire;
 
-use App\Traits\BuildsReportQuery; // Import trait
+use App\Traits\BuildsReportQuery;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
 class ReportComponent extends Component
 {
-    use BuildsReportQuery; // Gunakan trait
+    use BuildsReportQuery;
 
     public array $data;
     public string $filter = '';
@@ -21,6 +22,8 @@ class ReportComponent extends Component
 
     public function mount(): void
     {
+        Gate::authorize('view-reports');
+
         $this->data = ['title' => 'Buat Laporan', 'urlPath' => 'report'];
         $this->handleReset();
     }
@@ -37,8 +40,6 @@ class ReportComponent extends Component
         $this->monthFrom = 1;
         $this->monthUntil = 12;
     }
-
-    // HAPUS metode buildReportQuery karena sudah ada di trait
 
     public function generatePreview(): void
     {

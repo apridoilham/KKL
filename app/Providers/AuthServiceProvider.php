@@ -39,5 +39,8 @@ class AuthServiceProvider extends ServiceProvider
 
         // Semua role bisa melihat halaman-halaman dasar
         Gate::define('view-pages', fn(User $user) => $checkRole($user, ['admin', 'produksi', 'pengiriman']));
+
+        // HANYA Admin yang bisa melihat laporan
+        Gate::define('view-reports', fn(User $user) => $checkRole($user, 'admin'));
     }
 }
