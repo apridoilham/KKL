@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('code')->nullable();
             $table->string('category')->nullable();
             $table->string('name');
-            $table->integer('quantity')->default(0);
-            $table->string('status')->default('available'); // 'available' atau 'out'
+            $table->decimal('quantity', 10, 2)->default(0);
+            $table->string('status')->default('available');
             $table->timestamps();
         });
     }

@@ -8,7 +8,7 @@ use App\Traits\BuildsReportQuery;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Routing\Controller; // Menggunakan base controller dari framework
+use Illuminate\Routing\Controller;
 
 class ReportDownloadController extends Controller
 {
@@ -34,7 +34,6 @@ class ReportDownloadController extends Controller
 
         $fileName = 'laporan-' . $filter . '-' . now()->format('Y-m-d') . '.' . $type;
 
-        // Tentukan kelas Export sekali saja
         $exportClass = $filter === 'item' ? new ItemsExport($data) : new TransactionsExport($data);
 
         switch ($type) {

@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('item_id')->constrained('items')->onDelete('restrict');
-            $table->string('type'); // 'in', 'out', atau 'damaged'
-            $table->integer('quantity');
+            $table->string('type');
+            $table->decimal('quantity', 10, 2);
             $table->text('description')->nullable();
             $table->timestamps();
         });

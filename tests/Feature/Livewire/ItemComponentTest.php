@@ -44,7 +44,7 @@ class ItemComponentTest extends TestCase
         $this->actingAs($admin);
 
         Livewire::test(ItemComponent::class)
-            ->set('name', '') // Nama dikosongkan
+            ->set('name', '')
             ->call('store')
             ->assertHasErrors(['name' => 'required']);
     }
@@ -64,17 +64,16 @@ class ItemComponentTest extends TestCase
     }
 
     /** @test */
-    public function a_staff_cannot_delete_an_item()
+    public function a_non_admin_cannot_delete_an_item()
     {
-        $staff = User::factory()->create(['role' => 'staff']);
+        $staff = User::factory()->create(['role' => 'produksi']);
         $this->actingAs($staff);
 
         $item = Item::factory()->create();
 
         Livewire::test(ItemComponent::class)
             ->call('delete', $item->id);
-            
-        // Pastikan item masih ada di database
+
         $this->assertDatabaseHas('items', ['id' => $item->id]);
     }
 }
