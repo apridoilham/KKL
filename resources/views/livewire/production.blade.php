@@ -1,109 +1,120 @@
 <div>
-    <div class="container-fluid px-4 md:px-6 py-6">
-        <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
-            <div>
-                <h1 class="text-3xl font-extrabold text-slate-800">{{ $data['title'] }}</h1>
-                <p class="mt-1 text-slate-600">Pilih barang jadi, definisikan resepnya, lalu catat proses produksi.</p>
-            </div>
+    <div class="container mx-auto px-4 py-6 md:px-6">
+        <div class="mb-8">
+            <h1 class="text-3xl font-extrabold text-slate-900">Produksi Barang Jadi</h1>
+            <p class="mt-1 text-slate-500">Pilih barang jadi, definisikan resepnya, lalu catat proses produksi.</p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {{-- Kolom Kiri: Pemilihan Barang Jadi --}}
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-xl shadow-lg p-6 space-y-6">
-                    <h3 class="text-xl font-bold text-slate-800 border-b border-slate-200 pb-4">Pilih / Buat Barang Jadi</h3>
-                    <div>
-                        <label for="finishedGood" class="block text-sm font-medium text-slate-700">Pilih Barang Jadi</label>
-                        <div class="flex items-center space-x-2 mt-1">
-                            <select wire:model.live="selectedFinishedGoodId" id="finishedGood" class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+        <div class="w-full space-y-8">
+            
+            <div class="rounded-xl border border-slate-200 bg-white">
+                <div class="border-b border-slate-200 p-6">
+                    <h3 class="text-lg font-semibold text-slate-800">Langkah 1: Pilih Barang Jadi</h3>
+                </div>
+                <div class="p-6">
+                    <label for="finishedGood" class="text-sm font-medium text-slate-700">Pilih Barang Jadi yang Akan Diproduksi</label>
+                    <div class="mt-2">
+                        <div class="relative w-full">
+                            <select wire:model.live="selectedFinishedGoodId" id="finishedGood" class="block w-full appearance-none rounded-lg border border-slate-300 bg-white py-3 px-4 text-slate-800 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" style="background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3e%3cpath stroke=%27%236b7280%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27m6 8 4 4 4-4%27/%3e%3c/svg%3e'); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em;">
                                 <option value="">-- Pilih Barang --</option>
                                 @foreach($finishedGoods as $item)
                                     <option value="{{ $item->id }}">{{ $item->name }}</option>
                                 @endforeach
                             </select>
-                            <button type="button" wire:click="$set('isNewItemModalOpen', true)" class="flex-shrink-0 px-3 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-sm hover:bg-indigo-200">
-                                <i class="fas fa-plus"></i> Buat Baru
-                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Kolom Kanan: Form Resep & Form Produksi --}}
-            <div class="lg:col-span-2">
-                @if($selectedFinishedGoodId)
-                    {{-- Form untuk Membuat Resep (BOM) --}}
-                    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                        <h3 class="text-xl font-bold text-slate-800 border-b border-slate-200 pb-4">Resep (Bill of Materials)</h3>
-                        <div class="mt-4">
+            @if($selectedFinishedGoodId)
+                <div class="rounded-xl border border-slate-200 bg-white">
+                    <div class="border-b border-slate-200 p-6">
+                        <h3 class="text-lg font-semibold text-slate-800">Langkah 2: Atur Resep & Jalankan Produksi</h3>
+                    </div>
+
+                    <div class="divide-y divide-slate-200">
+                        <div class="p-6">
+                            <h4 class="text-base font-semibold text-slate-700 mb-4">Resep (Bill of Materials)</h4>
                             @if($bom->isNotEmpty())
-                                <ul class="space-y-2 mb-4">
+                                <ul class="mb-6 space-y-3">
                                     @foreach($bom as $material)
-                                        <li class="flex justify-between items-center p-2 bg-slate-50 rounded">
-                                            <span>{{ $material->name }}</span>
-                                            <div class="flex items-center space-x-4">
-                                                <span class="font-semibold">{{ floatval($material->pivot->quantity_required) }} unit</span>
-                                                <button wire:click="removeMaterialFromBom({{ $material->id }})" class="text-red-500 hover:text-red-700">&times;</button>
-                                            </div>
+                                        <li class="flex items-center justify-between rounded-lg bg-slate-50 p-3 border border-slate-200">
+                                            <span class="text-slate-700">{{ $material->name }}</span>
+                                            
+                                            @if($editingBomItemId === $material->id)
+                                                <div class="flex items-center space-x-2">
+                                                    <input wire:model="editingBomItemQuantity" wire:keydown.enter="saveBomItem({{ $material->id }})" type="number" step="1" class="block w-24 rounded-md border-slate-300 py-1 px-2 text-slate-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                                                    <button wire:click="saveBomItem({{ $material->id }})" class="p-2 rounded text-green-500 hover:bg-green-100">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button wire:click="cancelEditBomItem" class="p-2 rounded text-slate-400 hover:bg-slate-200">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            @else
+                                                <div class="flex items-center space-x-4">
+                                                    <span class="font-semibold text-slate-800">{{ $material->pivot->quantity_required }} unit</span>
+                                                    <button wire:click="editBomItem({{ $material->id }}, {{ $material->pivot->quantity_required }})" class="p-2 rounded text-slate-400 hover:text-amber-500 hover:bg-amber-50">
+                                                        <i class="fas fa-pen fa-xs"></i>
+                                                    </button>
+                                                    <button wire:click="removeMaterialFromBom({{ $material->id }})" class="text-slate-400 hover:text-red-500">&times;</button>
+                                                </div>
+                                            @endif
                                         </li>
                                     @endforeach
                                 </ul>
                             @else
-                                <p class="text-sm text-center text-slate-500 py-4">Resep masih kosong. Silakan tambah bahan mentah di bawah.</p>
+                                <p class="py-4 text-center text-sm text-slate-500">Resep masih kosong.</p>
                             @endif
 
-                            <div class="flex items-end space-x-2 border-t pt-4">
+                            <div class="flex items-end space-x-2 border-t border-slate-200 pt-6">
                                 <div class="flex-grow">
-                                    <label class="text-xs font-semibold text-slate-500">Pilih Barang Mentah</label>
-                                    <select wire:model="selectedRawMaterialId" class="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700">
+                                    <label class="text-xs font-semibold text-slate-500">Tambah Bahan Mentah</label>
+                                    <select wire:model="selectedRawMaterialId" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
                                         <option value="">-- Pilih Bahan --</option>
                                         @foreach($allRawMaterials as $raw)
-                                            <option value="{{ $raw->id }}">{{ $raw->name }} (Stok: {{ floatval($raw->quantity) }})</option>
+                                            <option value="{{ $raw->id }}">{{ $raw->name }} (Stok: {{ $raw->quantity }})</option>
                                         @endforeach
                                     </select>
-                                    @error('selectedRawMaterialId') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <label class="text-xs font-semibold text-slate-500">Jumlah Dibutuhkan</label>
-                                    <input wire:model="rawMaterialQuantity" type="number" step="0.01" class="mt-1 block w-32 border border-slate-300 rounded-lg py-2 px-3 text-slate-700">
-                                    @error('rawMaterialQuantity') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                    <label class="text-xs font-semibold text-slate-500">Jumlah</label>
+                                    <input wire:model="rawMaterialQuantity" type="number" step="1" class="mt-1 block w-32 rounded-lg border border-slate-300 py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
                                 </div>
-                                <button type="button" wire:click="addMaterialToBom" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600">Tambah</button>
+                                <button type="button" wire:click="addMaterialToBom" class="flex-shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Tambah</button>
                             </div>
+                             @error('selectedRawMaterialId') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                             @error('rawMaterialQuantity') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                         </div>
-                    </div>
 
-                    {{-- Form untuk Menjalankan Produksi --}}
-                    @if($bom->isNotEmpty())
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                             <h3 class="text-xl font-bold text-slate-800 border-b border-slate-200 pb-4">Jalankan Produksi</h3>
-                             <div class="mt-4">
+                        @if($bom->isNotEmpty())
+                            <div class="p-6 bg-slate-50">
+                                <h4 class="text-base font-semibold text-slate-700 mb-4">Jalankan Produksi</h4>
                                 <form wire:submit.prevent="produce">
                                     <div class="mb-6">
-                                        <label for="quantity" class="block text-sm font-medium text-slate-700">Jumlah yang Akan Diproduksi</label>
-                                        <input wire:model.live="quantityToProduce" type="number" min="1" id="quantity" class="mt-1 block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700">
+                                        <label for="quantity" class="text-sm font-medium text-slate-700">Jumlah yang Akan Diproduksi</label>
+                                        <input wire:model.live="quantityToProduce" type="number" min="1" step="1" id="quantity" class="mt-1 block w-full rounded-lg border border-slate-300 py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
                                     </div>
 
                                     <div class="space-y-4 mb-6">
-                                        <h4 class="text-sm font-semibold text-slate-800">Kalkulasi Kebutuhan Bahan:</h4>
+                                        <h5 class="text-sm font-semibold text-slate-800">Kalkulasi Kebutuhan Bahan:</h5>
                                         @php $canProduce = true; @endphp
                                         @foreach($bom as $material)
                                             @php
-                                                $quantityNeeded = $material->pivot->quantity_required * ($quantityToProduce > 0 ? $quantityToProduce : 1);
+                                                $quantityToProduceSafe = is_numeric($quantityToProduce) && $quantityToProduce > 0 ? $quantityToProduce : 1;
+                                                $quantityNeeded = $material->pivot->quantity_required * $quantityToProduceSafe;
                                                 $hasStock = $material->quantity >= $quantityNeeded;
-                                                if (!$hasStock) {
-                                                    $canProduce = false;
-                                                }
+                                                if (!$hasStock) { $canProduce = false; }
                                             @endphp
-                                            <div class="flex justify-between items-center p-3 rounded-lg {{ $hasStock ? 'bg-slate-50' : 'bg-red-100 border border-red-200' }}">
+                                            <div class="flex items-center justify-between rounded-lg p-3 {{ $hasStock ? 'bg-white border' : 'bg-red-50 border border-red-200' }}">
                                                 <div>
                                                     <p class="font-semibold text-slate-800">{{ $material->name }}</p>
-                                                    <p class="text-xs text-slate-500">Dibutuhkan: <span class="font-bold">{{ floatval($quantityNeeded) }}</span> / Stok: {{ floatval($material->quantity) }}</p>
+                                                    <p class="text-xs text-slate-500">Dibutuhkan: <span class="font-bold">{{ $quantityNeeded }}</span> / Stok: {{ $material->quantity }}</p>
                                                 </div>
                                                 @if(!$hasStock)
                                                     <div class="text-right">
                                                         <p class="font-bold text-sm text-red-600">Stok Kurang!</p>
-                                                        <p class="text-xs text-red-500">Butuh {{ floatval($quantityNeeded - $material->quantity) }} lagi</p>
+                                                        <p class="text-xs text-red-500">Butuh {{ $quantityNeeded - $material->quantity }} lagi</p>
                                                     </div>
                                                 @endif
                                             </div>
@@ -112,61 +123,28 @@
                                     
                                     @if(!$canProduce)
                                         <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50" role="alert">
-                                            <span class="font-medium">Peringatan!</span> Stok satu atau lebih bahan mentah tidak mencukupi untuk jumlah produksi ini.
+                                            <span class="font-medium">Peringatan!</span> Stok bahan mentah tidak mencukupi.
                                         </div>
                                     @endif
 
-                                    <div class="pt-2">
-                                        <button type="submit" @if(!$canProduce) disabled @endif wire:loading.attr="disabled" wire:target="produce" class="w-full inline-flex items-center justify-center px-4 py-3 border text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed">
-                                            <span wire:loading.remove wire:target="produce"><i class="fas fa-cogs mr-2"></i> Catat Produksi</span>
-                                            <span wire:loading wire:target="produce">Memproses...</span>
-                                        </button>
-                                    </div>
+                                    <button type="submit" @if(!$canProduce) disabled @endif wire:loading.attr="disabled" wire:target="produce" class="w-full inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800 disabled:bg-slate-400 disabled:cursor-not-allowed">
+                                        <span wire:loading.remove wire:target="produce"><i class="fas fa-cogs mr-2"></i> CATAT PRODUKSI SEBANYAK {{ $quantityToProduce > 0 ? $quantityToProduce : '' }} UNIT</span>
+                                        <span wire:loading wire:target="produce">Memproses...</span>
+                                    </button>
                                 </form>
                             </div>
-                        </div>
-                    @endif
-                @else
-                    <div class="bg-white rounded-xl shadow-lg p-6 text-center">
-                        <i class="fas fa-info-circle text-slate-400 text-3xl"></i>
-                        <p class="mt-2 text-slate-500">Silakan pilih atau buat barang jadi terlebih dahulu.</p>
+                        @endif
                     </div>
-                @endif
-            </div>
+                </div>
+            @else
+                <div class="rounded-xl border-2 border-dashed border-slate-200 p-12 text-center">
+                     <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                    </svg>
+                    <h3 class="mt-2 text-lg font-semibold text-slate-800">Mulai Proses Produksi</h3>
+                    <p class="mt-1 text-sm text-slate-500">Pilih barang jadi pada panel di atas untuk mengatur resep dan mencatat produksi.</p>
+                </div>
+            @endif
         </div>
     </div>
-
-    {{-- Modal untuk Membuat Barang Jadi Baru --}}
-    @if ($isNewItemModalOpen)
-        <div x-data="{ show: @entangle('isNewItemModalOpen') }" x-show="show" x-transition.opacity.duration.300ms class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-            <div x-show="show" x-transition.scale.duration.300ms @click.away="show = false" class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
-                <form wire:submit.prevent="saveNewFinishedGood">
-                    <div class="p-6 bg-indigo-600 text-white flex items-center justify-between">
-                        <h3 class="text-xl font-bold"><i class="fas fa-plus-circle mr-3"></i>Buat Barang Jadi Baru</h3>
-                        <button type="button" @click="show = false" class="text-indigo-200 hover:text-white text-3xl">&times;</button>
-                    </div>
-                    <div class="p-8 space-y-6">
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500 uppercase">Nama Barang Jadi <span class="text-red-500">*</span></label>
-                            <input wire:model="newItemName" type="text" class="mt-1 block w-full bg-transparent border-0 border-b-2 p-0 pb-2 focus:ring-0 focus:border-indigo-500" required>
-                            @error('newItemName') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500 uppercase">Kode Barang</label>
-                            <input wire:model="newItemCode" type="text" class="mt-1 block w-full bg-transparent border-0 border-b-2 p-0 pb-2 focus:ring-0 focus:border-indigo-500">
-                            @error('newItemCode') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label class="text-xs font-semibold text-slate-500 uppercase">Kategori</label>
-                            <input wire:model="newItemCategory" type="text" class="mt-1 block w-full bg-transparent border-0 border-b-2 p-0 pb-2 focus:ring-0 focus:border-indigo-500">
-                        </div>
-                    </div>
-                    <div class="p-6 bg-slate-50 rounded-b-xl flex justify-end space-x-3 border-t">
-                        <button type="button" @click="show = false" class="px-4 py-2.5 border rounded-lg text-sm font-medium">Batal</button>
-                        <button type="submit" class="inline-flex items-center px-4 py-2.5 border rounded-lg text-sm font-medium text-white bg-indigo-600">Simpan Barang</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
 </div>

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Livewire;
+
 use App\Models\Item;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
@@ -10,20 +11,15 @@ use Livewire\Component;
 class ProductionComponent extends Component
 {
     public array $data;
-    public $finishedGoods = [];
-    public $allRawMaterials = [];
-    public $bom;
-
     public ?int $selectedFinishedGoodId = null;
-    public int $quantityToProduce = 1;
-
-    // Properti untuk modal Buat Barang Jadi
+    public $quantityToProduce = 1;
     public bool $isNewItemModalOpen = false;
     public string $newItemName = '', $newItemCategory = '', $newItemCode = '';
-
-    // Properti untuk form tambah resep
     public ?int $selectedRawMaterialId = null;
     public $rawMaterialQuantity = 1;
+
+    public ?int $editingBomItemId = null;
+    public $editingBomItemQuantity = 1;
 
     public function mount(): void
     {
@@ -31,31 +27,39 @@ class ProductionComponent extends Component
             abort(403);
         }
         $this->data = ['title' => 'Produksi Barang Jadi', 'urlPath' => 'production'];
-        $this->loadFinishedGoods();
-        $this->allRawMaterials = Item::where('item_type', 'barang_mentah')->orderBy('name')->get();
-        $this->bom = collect();
     }
 
-    public function loadFinishedGoods(): void
+    public function updatedQuantityToProduce($value): void
     {
-        $this->finishedGoods = Item::where('item_type', 'barang_jadi')->orderBy('name')->get();
+        if (empty($value) || !is_numeric($value) || $value < 1) {
+            $this->quantityToProduce = 1;
+            $this->dispatch('toast', status: 'failed', message: 'Jumlah produksi harus bilangan bulat minimal 1.');
+        }
     }
 
-    public function updatedSelectedFinishedGoodId($id): void
+    public function editBomItem(int $itemId, int $currentQuantity): void
     {
-        if ($id) {
-            $this->loadBom();
-        } else {
-            $this->bom = collect();
-        }
+        $this->editingBomItemId = $itemId;
+        $this->editingBomItemQuantity = $currentQuantity;
     }
-    
-    public function loadBom(): void
+
+    public function cancelEditBomItem(): void
     {
-        if ($this->selectedFinishedGoodId) {
-            $finishedGood = Item::with('bomRawMaterials')->find($this->selectedFinishedGoodId);
-            $this->bom = $finishedGood->bomRawMaterials;
-        }
+        $this->reset(['editingBomItemId', 'editingBomItemQuantity']);
+    }
+
+    public function saveBomItem(int $itemId): void
+    {
+        $this->validate([
+            'editingBomItemQuantity' => 'required|integer|min:1',
+        ]);
+
+        $finishedGood = Item::find($this->selectedFinishedGoodId);
+        $finishedGood->bomRawMaterials()->updateExistingPivot($itemId, [
+            'quantity_required' => $this->editingBomItemQuantity
+        ]);
+
+        $this->cancelEditBomItem();
     }
 
     public function saveNewFinishedGood(): void
@@ -75,25 +79,22 @@ class ProductionComponent extends Component
         ]);
         $this->isNewItemModalOpen = false;
         $this->reset(['newItemName', 'newItemCategory', 'newItemCode']);
-        $this->loadFinishedGoods();
-        
         $this->selectedFinishedGoodId = $newItem->id;
-        $this->updatedSelectedFinishedGoodId($newItem->id);
-        
-        $this->dispatch('toast', ['status' => 'success', 'message' => 'Barang jadi baru berhasil dibuat.']);
+        $this->dispatch('toast', status: 'success', message: 'Barang jadi baru berhasil dibuat.');
     }
 
     public function addMaterialToBom(): void
     {
         $this->validate([
             'selectedRawMaterialId' => 'required|exists:items,id',
-            'rawMaterialQuantity' => 'required|numeric|min:0.01',
+            'rawMaterialQuantity' => 'required|integer|min:1',
         ]);
+        
         $finishedGood = Item::find($this->selectedFinishedGoodId);
         $finishedGood->bomRawMaterials()->syncWithoutDetaching([
             $this->selectedRawMaterialId => ['quantity_required' => $this->rawMaterialQuantity]
         ]);
-        $this->loadBom();
+
         $this->reset(['selectedRawMaterialId', 'rawMaterialQuantity']);
         $this->rawMaterialQuantity = 1;
     }
@@ -102,7 +103,6 @@ class ProductionComponent extends Component
     {
         $finishedGood = Item::find($this->selectedFinishedGoodId);
         $finishedGood->bomRawMaterials()->detach($rawMaterialId);
-        $this->loadBom();
     }
 
     public function produce(): void
@@ -115,19 +115,17 @@ class ProductionComponent extends Component
         try {
             DB::transaction(function () {
                 $finishedGood = Item::with('bomRawMaterials')->find($this->selectedFinishedGoodId);
-                $bom = $finishedGood->bomRawMaterials;
-
-                if ($bom->isEmpty()) {
+                if ($finishedGood->bomRawMaterials->isEmpty()) {
                     throw new \Exception('Barang Jadi ini tidak memiliki resep (Bill of Materials).');
                 }
 
-                foreach ($bom as $rawMaterial) {
+                foreach ($finishedGood->bomRawMaterials as $rawMaterial) {
                     $quantityNeeded = $rawMaterial->pivot->quantity_required * $this->quantityToProduce;
                     $rawMaterial->decreaseStock($quantityNeeded);
 
                     Transaction::create([
                         'item_id' => $rawMaterial->id,
-                        'type' => 'produksi_keluar',
+                        'type' => 'keluar_terpakai',
                         'quantity' => $quantityNeeded,
                         'description' => 'Digunakan untuk produksi ' . $finishedGood->name,
                     ]);
@@ -137,23 +135,37 @@ class ProductionComponent extends Component
                 
                 Transaction::create([
                     'item_id' => $finishedGood->id,
-                    'type' => 'produksi_masuk',
+                    'type' => 'masuk_jadi',
                     'quantity' => $this->quantityToProduce,
                     'description' => 'Hasil produksi',
                 ]);
             });
 
-            $this->dispatch('toast', ['status' => 'success', 'message' => 'Produksi berhasil dicatat.']);
+            $this->dispatch('toast', status: 'success', message: 'Produksi berhasil dicatat.');
             $this->reset(['selectedFinishedGoodId', 'quantityToProduce']);
-            $this->bom = collect();
 
         } catch (\Exception $e) {
-            $this->dispatch('toast', ['status' => 'failed', 'message' => $e->getMessage()]);
+            $this->dispatch('toast', status: 'failed', message: $e->getMessage());
         }
     }
 
     public function render()
     {
-        return view('livewire.production')->layout('components.layouts.app', ['data' => $this->data]);
+        $finishedGoods = Item::where('item_type', 'barang_jadi')->orderBy('name')->get();
+        $allRawMaterials = Item::where('item_type', 'barang_mentah')->orderBy('name')->get();
+        
+        $bom = collect();
+        if ($this->selectedFinishedGoodId) {
+            $item = Item::with('bomRawMaterials')->find($this->selectedFinishedGoodId);
+            if ($item) {
+                $bom = $item->bomRawMaterials;
+            }
+        }
+
+        return view('livewire.production', [
+            'finishedGoods' => $finishedGoods,
+            'allRawMaterials' => $allRawMaterials,
+            'bom' => $bom,
+        ])->layout('components.layouts.app', ['data' => $this->data]);
     }
 }

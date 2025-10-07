@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -23,6 +24,8 @@ class TransactionComponent extends Component
     public int $quantity = 1;
     public $items = [];
     public bool $isModalOpen = false;
+
+    public float $originalQuantity = 0;
 
     public string $filterDateType = 'all_time';
     public string $filterDate;
@@ -66,17 +69,19 @@ class TransactionComponent extends Component
     public function loadItems($type = null): void
     {
         $query = Item::query();
-        if ($type === 'pembelian_masuk') {
-            $query->where('item_type', 'barang_mentah');
-        } elseif ($type === 'pengiriman_keluar') {
-            $query->where('item_type', 'barang_jadi');
-        }
+
+        match ($type) {
+            'masuk_mentah', 'keluar_mentah' => $query->where('item_type', 'barang_mentah'),
+            'masuk_jadi', 'keluar_dikirim' => $query->where('item_type', 'barang_jadi'),
+            default => null,
+        };
+
         $this->items = $query->orderBy('name')->get();
     }
 
     public function resetInputFields(): void
     {
-        $this->reset(['id', 'itemId', 'type', 'description']);
+        $this->reset(['id', 'itemId', 'type', 'description', 'originalQuantity']);
         $this->quantity = 1;
         $this->loadItems();
     }
@@ -90,37 +95,95 @@ class TransactionComponent extends Component
 
     private function clearStatsCache(): void
     {
-        // Menghapus cache spesifik, bukan flush semua
-        // Kunci cache ini harus konsisten dengan yang ada di HomeComponent
-        Cache::forget('dashboard-stats-all_time-');
+        Cache::flush();
+    }
+
+    public function edit(int $id): void
+    {
+        Gate::authorize('edit-transactions');
+        $transaction = Transaction::findOrFail($id);
+
+        if (in_array($transaction->type, ['masuk_jadi', 'keluar_terpakai'])) {
+            $this->dispatch('toast', status: 'failed', message: 'Transaksi produksi tidak dapat diedit.');
+            return;
+        }
+
+        $this->id = $transaction->id;
+        $this->itemId = $transaction->item_id;
+        $this->type = $transaction->type;
+        $this->quantity = $transaction->quantity;
+        $this->description = $transaction->description;
+        $this->originalQuantity = $transaction->quantity;
+        $this->loadItems($transaction->type);
+        $this->isModalOpen = true;
     }
 
     public function store(): void
     {
-        Gate::authorize('manage-transactions');
+        if ($this->id) {
+            Gate::authorize('edit-transactions');
+        } else {
+            Gate::authorize('manage-transactions');
+        }
+
         $this->validate([
             'itemId' => 'required|exists:items,id',
-            'type' => 'required|in:pembelian_masuk,pengiriman_keluar,rusak',
-            'quantity' => 'required|integer|min:1',
+            'type' => 'required|in:masuk_mentah,masuk_jadi,keluar_dikirim,keluar_mentah,rusak',
+            'quantity' => 'required|numeric|min:1',
             'description' => 'nullable|string'
         ]);
-        $item = Item::findOrFail($this->itemId);
+
         try {
-            if ($this->type == 'pembelian_masuk') {
-                $item->increaseStock($this->quantity);
-            } else {
-                $item->decreaseStock($this->quantity);
-            }
-            Transaction::create([
-                'item_id' => $this->itemId, 'type' => $this->type,
-                'quantity' => $this->quantity, 'description' => $this->description,
-            ]);
+            DB::transaction(function () {
+                $stockInTypes = ['masuk_mentah', 'masuk_jadi'];
+
+                if ($this->id) { // Logic for UPDATE
+                    $transaction = Transaction::findOrFail($this->id);
+                    $oldItem = $transaction->item;
+
+                    if (in_array($transaction->type, $stockInTypes)) {
+                        $oldItem->decreaseStock($this->originalQuantity);
+                    } else {
+                        $oldItem->increaseStock($this->originalQuantity);
+                    }
+
+                    $newItem = Item::findOrFail($this->itemId);
+                    if (in_array($this->type, $stockInTypes)) {
+                        $newItem->increaseStock($this->quantity);
+                    } else {
+                        $newItem->decreaseStock($this->quantity);
+                    }
+
+                    $transaction->update([
+                        'item_id' => $this->itemId,
+                        'type' => $this->type,
+                        'quantity' => $this->quantity,
+                        'description' => $this->description,
+                    ]);
+
+                } else { // Logic for CREATE
+                    $item = Item::findOrFail($this->itemId);
+                    if (in_array($this->type, $stockInTypes)) {
+                        $item->increaseStock($this->quantity);
+                    } else {
+                        $item->decreaseStock($this->quantity);
+                    }
+                    Transaction::create([
+                        'item_id' => $this->itemId,
+                        'type' => $this->type,
+                        'quantity' => $this->quantity,
+                        'description' => $this->description,
+                    ]);
+                }
+            });
+
             $this->clearStatsCache();
-            $this->dispatch('toast', ['status' => 'success', 'message' => 'Transaksi berhasil dibuat.']);
+            $this->dispatch('toast', status: 'success', message: $this->id ? 'Transaksi berhasil diperbarui.' : 'Transaksi berhasil dibuat.');
             $this->isModalOpen = false;
             $this->resetInputFields();
+
         } catch (\Exception $e) {
-            $this->dispatch('toast', ['status' => 'failed', 'message' => $e->getMessage()]);
+            $this->dispatch('toast', status: 'failed', message: $e->getMessage());
         }
     }
 
@@ -128,37 +191,50 @@ class TransactionComponent extends Component
     {
         Gate::authorize('manage-transactions');
         $transaction = Transaction::findOrFail($id);
-        $lockTime = config('inventory.transaction_lock_time', 10);
-        if (in_array($transaction->type, ['produksi_masuk', 'produksi_keluar'])) {
-            $this->dispatch('toast', ['status' => 'failed', 'message' => 'Transaksi produksi tidak dapat dihapus manual.']);
+        
+        if (in_array($transaction->type, ['masuk_jadi', 'keluar_terpakai'])) {
+            $this->dispatch('toast', status: 'failed', message: 'Transaksi produksi tidak dapat dihapus manual.');
             return;
         }
-        if (Carbon::parse($transaction->created_at)->diffInMinutes(Carbon::now()) > $lockTime) {
-            $this->dispatch('toast', ['status' => 'failed', 'message' => "Transaksi terkunci setelah {$lockTime} menit."]);
-            return;
-        }
-        try {
-            $item = $transaction->item;
-            if ($transaction->type == 'pembelian_masuk') {
-                $item->decreaseStock($transaction->quantity);
-            } else {
-                $item->increaseStock($transaction->quantity);
+
+        if (auth()->user()->role !== 'admin') {
+            $lockTime = config('inventory.transaction_lock_time', 10);
+            if (Carbon::parse($transaction->created_at)->diffInMinutes(Carbon::now()) > $lockTime) {
+                $this->dispatch('toast', status: 'failed', message: "Transaksi terkunci setelah {$lockTime} menit.");
+                return;
             }
-            $transaction->delete();
+        }
+
+        try {
+            DB::transaction(function () use ($transaction) {
+                $item = $transaction->item;
+                if (in_array($transaction->type, ['masuk_mentah', 'masuk_jadi'])) {
+                    $item->decreaseStock($transaction->quantity);
+                } else {
+                    $item->increaseStock($transaction->quantity);
+                }
+                $transaction->delete();
+            });
+
             $this->clearStatsCache();
-            $this->dispatch('toast', ['status' => 'success', 'message' => 'Transaksi dihapus, stok dikembalikan.']);
+            $this->dispatch('toast', status: 'success', message: 'Transaksi dihapus, stok dikembalikan.');
         } catch (\Exception $e) {
-            $this->dispatch('toast', ['status' => 'failed', 'message' => $e->getMessage()]);
+            $this->dispatch('toast', status: 'failed', message: $e->getMessage());
         }
     }
 
     public function render()
     {
         $transactionsQuery = Transaction::with('item')
-            ->where(fn($query) => $query->whereHas('item', fn($subQuery) => $subQuery->where('name', 'like', '%' . $this->search . '%')
-                ->orWhere('category', 'like', '%' . $this->search . '%'))
-                ->orWhere('description', 'like', '%' . $this->search . '%'))
-            ->when($this->filterType !== 'all', fn($query) => $query->where('type', $this->filterType));
+            ->where(function ($query) {
+                $query->whereHas('item', function ($subQuery) {
+                    $subQuery->where('name', 'like', '%' . $this->search . '%')
+                        ->orWhere('category', 'like', '%' . $this->search . '%');
+                })->orWhere('description', 'like', '%' . $this->search . '%');
+            })
+            ->when($this->filterType !== 'all', function ($query) {
+                $query->where('type', $this->filterType);
+            });
 
         if ($this->filterDateType !== 'all_time') {
             switch ($this->filterDateType) {
@@ -166,8 +242,12 @@ class TransactionComponent extends Component
                     $transactionsQuery->whereDate('created_at', $this->filterDate);
                     break;
                 case 'monthly':
-                    $date = Carbon::parse($this->filterMonth);
-                    $transactionsQuery->whereYear('created_at', $date->year)->whereMonth('created_at', $date->month);
+                    try {
+                        $date = Carbon::parse($this->filterMonth);
+                        $transactionsQuery->whereYear('created_at', $date->year)->whereMonth('created_at', $date->month);
+                    } catch (\Exception $e) {
+                        // Abaikan jika format bulan tidak valid
+                    }
                     break;
                 case 'yearly':
                     $transactionsQuery->whereYear('created_at', $this->filterYear);

@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use Exception;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Item extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'code',
         'category',
@@ -30,14 +33,14 @@ class Item extends Model
                         ->withTimestamps();
     }
 
-    public function increaseStock(float $amount): void
+    public function increaseStock(int $amount): void
     {
         $this->quantity += $amount;
         $this->status = $this->quantity > 0 ? 'available' : 'out';
         $this->save();
     }
 
-    public function decreaseStock(float $amount): void
+    public function decreaseStock(int $amount): void
     {
         if ($this->quantity < $amount) {
             throw new Exception('Stok tidak mencukupi untuk transaksi ini.');

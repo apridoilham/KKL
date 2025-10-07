@@ -8,19 +8,25 @@ use Illuminate\Database\Eloquent\Builder;
 
 trait BuildsReportQuery
 {
-    /**
-     * Membuat instance query berdasarkan filter yang diberikan.
-     *
-     * @param string $filter Tipe data (item, in, out, damaged)
-     * @param string $filterBy Periode (date, month, year)
-     * @param array $params Parameter periode (dateFrom, dateUntil, dll.)
-     * @return Builder
-     */
     protected function buildReportQuery(string $filter, string $filterBy, array $params): Builder
     {
-        $query = $filter === 'item'
-            ? Item::query()
-            : Transaction::with('item')->where('type', $filter);
+        $query = match ($filter) {
+            'item' => Item::query(),
+            'in' => Transaction::with('item')->whereIn('type', ['masuk_mentah', 'masuk_jadi']),
+            'out' => Transaction::with('item')->whereIn('type', ['keluar_terpakai', 'keluar_dikirim', 'keluar_mentah']),
+            'damaged' => Transaction::with('item')->where('type', 'rusak'),
+            default => Transaction::with('item')->where('type', $filter),
+        };
+
+        if (isset($params['itemType']) && $params['itemType'] !== 'all') {
+            if ($filter === 'item') {
+                $query->where('item_type', $params['itemType']);
+            } else {
+                $query->whereHas('item', function ($q) use ($params) {
+                    $q->where('item_type', $params['itemType']);
+                });
+            }
+        }
 
         switch ($filterBy) {
             case 'date':

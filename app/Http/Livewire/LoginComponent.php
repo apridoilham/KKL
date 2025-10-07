@@ -11,8 +11,9 @@ class LoginComponent extends Component
 {
     public $data, $checkData;
     public $username, $password, $name, $securityQuestion, $securityAnswer, $newPassword, $confPass;
-    public $isModalOpen = false;
+    public bool $isModalOpen = false;
     public $isVerified, $isUserFound;
+    public bool $remember = false;
 
     public function mount()
     {
@@ -59,7 +60,7 @@ class LoginComponent extends Component
             $this->addError('username', 'Username atau password salah.');
             return;
         }
-        Auth::login($user);
+        Auth::login($user, $this->remember);
         return redirect()->route('home');
     }
 

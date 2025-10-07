@@ -47,12 +47,10 @@ class ItemComponent extends Component
     public function resetInputFields(): void
     {
         $this->reset(['id', 'code', 'category', 'name']);
-        $this->item_type = 'barang_mentah';
     }
 
     private function clearStatsCache(): void
     {
-        // Menghapus cache spesifik, bukan flush semua
         Cache::forget('dashboard-stats-all_time-');
     }
 
@@ -60,6 +58,9 @@ class ItemComponent extends Component
     {
         Gate::authorize('manage-items');
         $this->resetInputFields();
+        
+        $this->item_type = $this->filterType ?? 'barang_mentah';
+        
         $this->isModalOpen = true;
     }
 
@@ -71,22 +72,24 @@ class ItemComponent extends Component
             'name' => 'required|string|max:255',
             'category' => 'nullable|string|max:255',
             'code' => 'nullable|string|max:50|unique:items,code,' . $this->id,
-            'item_type' => 'required|in:barang_mentah,barang_jadi',
         ]);
 
-        $item = Item::updateOrCreate(['id' => $this->id], $validatedData);
+        $dataToSave = $validatedData;
+        $dataToSave['item_type'] = $this->item_type;
 
         if (!$this->id) {
-            $item->quantity = 0;
-            $item->status = 'out';
-            $item->save();
+            $dataToSave['quantity'] = 0;
+            $dataToSave['status'] = 'out';
         }
 
+        Item::updateOrCreate(['id' => $this->id], $dataToSave);
+
         $this->clearStatsCache();
-        $this->dispatch('toast', [
-            'status' => 'success',
-            'message' => $this->id ? 'Barang berhasil diperbarui.' : 'Barang baru berhasil dibuat.'
-        ]);
+        $this->dispatch(
+            'toast',
+            status: 'success',
+            message: $this->id ? 'Barang berhasil diperbarui.' : 'Barang baru berhasil dibuat.'
+        );
         $this->isModalOpen = false;
         $this->resetInputFields();
     }
@@ -109,9 +112,9 @@ class ItemComponent extends Component
         try {
             Item::findOrFail($id)->delete();
             $this->clearStatsCache();
-            $this->dispatch('toast', ['status' => 'success', 'message' => 'Data berhasil dihapus.']);
+            $this->dispatch('toast', status: 'success', message: 'Data berhasil dihapus.');
         } catch (\Exception $e) {
-            $this->dispatch('toast', ['status' => 'failed', 'message' => 'Gagal! Barang terhubung dengan transaksi.']);
+            $this->dispatch('toast', status: 'failed', message: 'Gagal! Barang terhubung dengan transaksi.');
         }
     }
 

@@ -23,7 +23,6 @@ class UserComponent extends Component
     public bool $isModalOpen = false;
     public bool $isEditMode = false;
 
-    // Properti untuk filter peran
     public string $filterRole = 'all';
 
     protected function rules()
@@ -43,7 +42,6 @@ class UserComponent extends Component
 
     public function mount(): void
     {
-        // Otorisasi saat komponen pertama kali dimuat
         Gate::authorize('manage-users');
         $this->data = ['title' => 'Manajemen Pengguna', 'urlPath' => 'user'];
     }
@@ -57,7 +55,6 @@ class UserComponent extends Component
 
     private function clearStatsCache(): void
     {
-        // Menghapus cache spesifik yang relevan
         Cache::forget('dashboard-stats-all_time-');
     }
 
@@ -68,7 +65,6 @@ class UserComponent extends Component
 
     public function create(): void
     {
-        // Otorisasi untuk tindakan membuat pengguna
         Gate::authorize('manage-users');
         $this->resetInputFields();
         $this->isModalOpen = true;
@@ -76,7 +72,6 @@ class UserComponent extends Component
 
     public function edit(int $id): void
     {
-        // Otorisasi untuk tindakan mengedit pengguna
         Gate::authorize('manage-users');
         $user = User::findOrFail($id);
         $this->userId = $id;
@@ -89,7 +84,6 @@ class UserComponent extends Component
 
     public function store(): void
     {
-        // Otorisasi untuk tindakan menyimpan (baik baru maupun update)
         Gate::authorize('manage-users');
         $this->validate();
 
@@ -104,24 +98,24 @@ class UserComponent extends Component
         User::updateOrCreate(['id' => $this->userId], $userData);
 
         $this->clearStatsCache();
-        $this->dispatch('toast', [
-            'status' => 'success',
-            'message' => $this->userId ? 'Data Pengguna berhasil diperbarui.' : 'Pengguna baru berhasil dibuat.'
-        ]);
+        $this->dispatch(
+            'toast',
+            status: 'success',
+            message: $this->userId ? 'Data Pengguna berhasil diperbarui.' : 'Pengguna baru berhasil dibuat.'
+        );
         $this->resetInputFields();
     }
 
     public function delete(int $id): void
     {
-        // Otorisasi untuk tindakan menghapus pengguna
         Gate::authorize('manage-users');
         if ($id == auth()->id()) {
-            $this->dispatch('toast', ['status' => 'failed', 'message' => 'Anda tidak dapat menghapus akun Anda sendiri.']);
+            $this->dispatch('toast', status: 'failed', message: 'Anda tidak dapat menghapus akun Anda sendiri.');
             return;
         }
         User::findOrFail($id)->delete();
         $this->clearStatsCache();
-        $this->dispatch('toast', ['status' => 'success', 'message' => 'Pengguna berhasil dihapus.']);
+        $this->dispatch('toast', status: 'success', message: 'Pengguna berhasil dihapus.');
     }
 
     public function render()
@@ -130,7 +124,6 @@ class UserComponent extends Component
             ->where(fn($query) => $query->where('name', 'like', '%' . $this->search . '%')
                 ->orWhere('username', 'like', '%' . $this->search . '%'));
 
-        // Tambahkan filter berdasarkan peran
         $usersQuery->when($this->filterRole !== 'all', function ($query) {
             return $query->where('role', $this->filterRole);
         });

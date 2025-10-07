@@ -65,7 +65,7 @@ class DummyDataSeeder extends Seeder
                 $item->increaseStock($initialStock);
                 Transaction::create([
                     'item_id' => $item->id,
-                    'type' => 'pembelian_masuk',
+                    'type' => 'masuk_mentah',
                     'quantity' => $initialStock,
                     'description' => 'Stok awal dari pemasok',
                     'created_at' => $item->created_at->addDay(),
@@ -78,16 +78,14 @@ class DummyDataSeeder extends Seeder
 
     private function createFinishedGoodsAndBom(\Illuminate\Support\Collection $rawMaterials): void
     {
-        // Barang Jadi 1: Kue Bolu
         $kue = Item::create(['name' => 'Kue Bolu', 'category' => 'Makanan Jadi', 'item_type' => 'barang_jadi', 'code' => 'PROD-KUE01']);
         $kue->bomRawMaterials()->attach([
-            $rawMaterials->firstWhere('name', 'Tepung Terigu')->id => ['quantity_required' => 0.5], // 0.5 kg
-            $rawMaterials->firstWhere('name', 'Gula Pasir')->id => ['quantity_required' => 0.3], // 0.3 kg
-            $rawMaterials->firstWhere('name', 'Telur Ayam')->id => ['quantity_required' => 4], // 4 butir
-            $rawMaterials->firstWhere('name', 'Mentega')->id => ['quantity_required' => 0.2], // 0.2 kg
+            $rawMaterials->firstWhere('name', 'Tepung Terigu')->id => ['quantity_required' => 2],
+            $rawMaterials->firstWhere('name', 'Gula Pasir')->id => ['quantity_required' => 1],
+            $rawMaterials->firstWhere('name', 'Telur Ayam')->id => ['quantity_required' => 4],
+            $rawMaterials->firstWhere('name', 'Mentega')->id => ['quantity_required' => 1],
         ]);
 
-        // Barang Jadi 2: Komputer Rakitan
         $komputer = Item::create(['name' => 'PC Gaming Rakitan', 'category' => 'Elektronik Jadi', 'item_type' => 'barang_jadi', 'code' => 'PROD-PC01']);
         $komputer->bomRawMaterials()->attach([
             $rawMaterials->firstWhere('name', 'CPU Intel i7')->id => ['quantity_required' => 1],

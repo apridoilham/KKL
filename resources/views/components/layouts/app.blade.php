@@ -14,19 +14,16 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-
-    {{-- Script AlpineJS dari CDN sudah dihapus karena Livewire 3 sudah menyertakannya secara default --}}
-
 </head>
-<body class="bg-slate-100 font-sans">
-    <div x-data="{ sidebarOpen: window.innerWidth > 768 }" class="flex h-screen bg-slate-100">
+<body class="bg-slate-100 font-sans text-slate-600">
+    <div x-data="{ sidebarOpen: window.innerWidth > 1024 }" class="flex h-screen bg-slate-100">
 
         @include('components.partials.sidebar')
 
         <div class="flex-1 flex flex-col overflow-hidden">
             @include('components.partials.topbar')
 
-            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100">
+            <main class="flex-1 overflow-x-hidden overflow-y-auto">
                 {{ $slot }}
             </main>
 
@@ -37,7 +34,6 @@
     @livewireScripts
     @stack('scripts')
 
-    {{-- Komponen Notifikasi Toast dengan AlpineJS --}}
     <div
         x-data="{
             show: false,
@@ -62,14 +58,14 @@
         class="fixed bottom-5 right-5 w-full max-w-xs z-50"
         x-cloak
     >
-        <div class="p-4 rounded-lg shadow-lg text-white" :class="{ 'bg-green-500': status === 'success', 'bg-red-500': status === 'failed' }">
+        <div class="p-4 rounded-lg shadow-lg border bg-white" :class="{ 'border-green-500': status === 'success', 'border-red-500': status === 'failed' }">
             <div class="flex items-center">
                 <div class="mr-3">
-                    <i x-show="status === 'success'" class="fas fa-check-circle fa-lg"></i>
-                    <i x-show="status === 'failed'" class="fas fa-times-circle fa-lg"></i>
+                    <i x-show="status === 'success'" class="fas fa-check-circle fa-lg text-green-500"></i>
+                    <i x-show="status === 'failed'" class="fas fa-times-circle fa-lg text-red-500"></i>
                 </div>
-                <div x-text="message" class="font-medium"></div>
-                <button @click="show = false" class="ml-auto -mx-1.5 -my-1.5 p-1.5 rounded-full hover:bg-white/20">
+                <div x-text="message" class="font-medium text-slate-800"></div>
+                <button @click="show = false" class="ml-auto -mx-1.5 -my-1.5 p-1.5 rounded-full hover:bg-slate-100">
                     <i class="fas fa-times"></i>
                 </button>
             </div>

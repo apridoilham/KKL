@@ -1,197 +1,162 @@
-<div class="container-fluid px-4 md:px-6 py-6">
+<div class="container mx-auto px-4 py-6 md:px-6">
 
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
-        <div>
-            <h1 class="text-3xl font-extrabold text-slate-800">Halo, {{ auth()->user()->name }}! 👋</h1>
-            <p class="mt-1 text-slate-600">Selamat datang kembali, berikut ringkasan inventaris Anda.</p>
-        </div>
-        <div class="flex items-center space-x-3 mt-4 md:mt-0">
-            <button wire:click="$set('isModalOpenData', true)" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50">
-                <i class="fas fa-edit fa-fw mr-2 text-slate-500"></i> Ubah Data
-            </button>
-            <button wire:click="$set('isModalOpen', true)" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50">
-                <i class="fas fa-key fa-fw mr-2 text-slate-500"></i> Ubah Password
-            </button>
-        </div>
+    <div class="mb-8">
+        <h1 class="text-3xl font-extrabold text-slate-900">Halo, {{ auth()->user()->name }}! 👋</h1>
+        <p class="mt-1 text-slate-500">Selamat datang kembali, berikut ringkasan inventaris Anda.</p>
     </div>
 
-    <div class="bg-white rounded-xl shadow-lg p-4 mb-6">
-        <div class="flex flex-wrap items-center gap-4">
-            <div class="flex-shrink-0">
-                <label for="filterType" class="text-sm font-medium text-slate-700">Tampilkan Data:</label>
+    <div 
+        x-data="{ 
+            open: false, 
+            activeFilter: '{{ $filterType }}',
+            dateValue: '{{ $filterDate }}',
+            monthValue: '{{ \Carbon\Carbon::parse($filterMonth)->format('Y-m') }}',
+            yearValue: '{{ $filterYear }}',
+            selectedMonth: '{{ \Carbon\Carbon::parse($filterMonth)->format('m') }}',
+            selectedYearForMonth: '{{ \Carbon\Carbon::parse($filterMonth)->format('Y') }}',
+        }" 
+        x-init="$watch('selectedMonth', () => { monthValue = selectedYearForMonth + '-' + selectedMonth }); $watch('selectedYearForMonth', () => { monthValue = selectedYearForMonth + '-' + selectedMonth })"
+        class="mb-6"
+    >
+        <div class="relative">
+            <button @click="open = !open" type="button" class="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm sm:w-auto">
+                <div class="flex items-center gap-x-3">
+                    <i class="fas fa-calendar-alt text-slate-400"></i>
+                    <div>
+                        <p class="text-xs text-slate-500">Filter Waktu</p>
+                        <p class="font-semibold text-slate-800">
+                            @if($filterType == 'daily')
+                                {{ \Carbon\Carbon::parse($filterDate)->format('d F Y') }}
+                            @elseif($filterType == 'monthly')
+                                {{ \Carbon\Carbon::parse($filterMonth)->format('F Y') }}
+                            @elseif($filterType == 'yearly')
+                                {{ $filterYear }}
+                            @else
+                                Semua Waktu
+                            @endif
+                        </p>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-down text-slate-400 transition-transform" :class="{ 'rotate-180': open }"></i>
+            </button>
+
+            <div 
+                x-show="open" 
+                @click.away="open = false" 
+                x-transition
+                class="absolute top-full z-10 mt-2 w-full max-w-sm rounded-xl border border-slate-200 bg-white p-4 shadow-lg"
+                style="display: none;"
+            >
+                <div class="flex items-center space-x-1 rounded-lg bg-slate-100 p-1 mb-4">
+                    <button @click="activeFilter = 'all_time'; $wire.resetFilters()" type="button" class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors" :class="{ 'bg-white text-slate-800 shadow-sm': activeFilter === 'all_time', 'text-slate-500 hover:text-slate-700': activeFilter !== 'all_time' }">Semua Waktu</button>
+                    <button @click="activeFilter = 'daily'" type="button" class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors" :class="{ 'bg-white text-slate-800 shadow-sm': activeFilter === 'daily', 'text-slate-500 hover:text-slate-700': activeFilter !== 'daily' }">Harian</button>
+                    <button @click="activeFilter = 'monthly'" type="button" class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors" :class="{ 'bg-white text-slate-800 shadow-sm': activeFilter === 'monthly', 'text-slate-500 hover:text-slate-700': activeFilter !== 'monthly' }">Bulanan</button>
+                    <button @click="activeFilter = 'yearly'" type="button" class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors" :class="{ 'bg-white text-slate-800 shadow-sm': activeFilter === 'yearly', 'text-slate-500 hover:text-slate-700': activeFilter !== 'yearly' }">Tahunan</button>
+                </div>
+
+                <div class="mb-4">
+                    <div x-show="activeFilter === 'daily'"><input x-model="dateValue" type="date" class="w-full rounded-lg border-slate-300 py-2 px-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"></div>
+                    <div x-show="activeFilter === 'monthly'" class="flex items-center gap-x-2">
+                        <select x-model="selectedMonth" class="w-full rounded-lg border-slate-300 py-2 px-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                            @for ($i = 1; $i <= 12; $i++)
+                                <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">{{ date('F', mktime(0, 0, 0, $i, 1)) }}</option>
+                            @endfor
+                        </select>
+                        <select x-model="selectedYearForMonth" class="w-full rounded-lg border-slate-300 py-2 px-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                            @php $currentYear = date('Y'); @endphp
+                            @for ($year = $currentYear - 5; $year <= $currentYear + 1; $year++)
+                                <option value="{{ $year }}">{{ $year }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div x-show="activeFilter === 'yearly'"><input x-model="yearValue" type="number" class="w-full rounded-lg border-slate-300 py-2 px-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500" placeholder="Tahun..."></div>
+                </div>
+
+                <button 
+                    @click="if (activeFilter !== 'all_time') { $wire.applyDashboardFilter(activeFilter, dateValue, monthValue, yearValue) }; open = false"
+                    type="button"
+                    class="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                    x-show="activeFilter !== 'all_time'"
+                >
+                    Terapkan
+                </button>
             </div>
-            <div class="w-full sm:w-48">
-                <select wire:model.live="filterType" id="filterType" class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    <option value="all_time">Semua Waktu</option>
-                    <option value="daily">Harian</option>
-                    <option value="monthly">Bulanan</option>
-                    <option value="yearly">Tahunan</option>
-                </select>
-            </div>
-            
-            @if($filterType === 'daily')
-                <div class="w-full sm:w-48">
-                    <input wire:model.live="filterDate" type="date" class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                </div>
-            @elseif($filterType === 'monthly')
-                <div class="w-full sm:w-48">
-                    <input wire:model.live="filterMonth" type="month" class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                </div>
-            @elseif($filterType === 'yearly')
-                <div class="w-full sm:w-48">
-                    <input wire:model.live="filterYear" type="number" class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Tahun...">
-                </div>
-            @endif
-            
-            <button wire:click="resetFilters" class="px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50">Reset</button>
         </div>
     </div>
     
     <div class="relative">
-        <div wire:loading.flex wire:target="loadDashboardData, resetFilters" class="absolute inset-0 bg-white bg-opacity-75 z-10 flex items-center justify-center rounded-2xl">
-            <i class="fas fa-spinner fa-spin text-indigo-500 text-3xl"></i>
+        <div wire:loading.flex wire:target="loadDashboardData, resetFilters, applyDashboardFilter" class="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm">
+            <i class="fas fa-spinner fa-spin text-amber-500 text-3xl"></i>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-2xl shadow-lg border">
-                <p class="text-sm font-medium text-slate-500">Total Jenis Barang</p>
-                <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalItems }}</p>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-lg border">
-                <p class="text-sm font-medium text-slate-500">Total Stok Tersedia</p>
-                <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalStock }}</p>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-lg border">
-                <p class="text-sm font-medium text-slate-500">Total Pengguna</p>
-                <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalUsers }}</p>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-lg border">
-                <p class="text-sm font-medium text-slate-500">Total Barang Masuk</p>
-                <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalIn }}</p>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-lg border">
-                <p class="text-sm font-medium text-slate-500">Total Barang Keluar</p>
-                <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalOut }}</p>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-lg border">
-                <p class="text-sm font-medium text-slate-500">Total Barang Rusak</p>
-                <p class="text-3xl font-bold text-slate-800 mt-1">{{ $totalDamaged }}</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg">
-                <h3 class="font-bold text-slate-800 mb-4">5 Barang Paling Aktif</h3>
-                <div class="h-80"><canvas id="topStockChart"></canvas></div>
-            </div>
-            <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-2xl shadow-lg">
-                    <h3 class="font-bold text-slate-800 mb-4">Volume Transaksi per Kategori</h3>
-                    <div class="h-64"><canvas id="categoryChart"></canvas></div>
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            
+            {{-- Kartu-kartu statistik tidak berubah --}}
+            <div class="group h-[116px]" style="perspective: 1000px">
+                <div x-data="{ flipped: false }" @click="flipped = !flipped" class="relative h-full w-full cursor-pointer transition-transform duration-500" style="transform-style: preserve-3d;" :class="{ '[transform:rotateY(180deg)]': flipped }">
+                    <div class="absolute h-full w-full rounded-2xl border border-slate-200 bg-white p-6" style="backface-visibility: hidden;">
+                        <p class="text-sm font-medium text-slate-500">Total Jenis Barang</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalItems }}</p>
+                        <div class="absolute bottom-4 right-4 text-slate-300 transition-colors group-hover:text-slate-500"><i class="fas fa-sync-alt"></i></div>
+                    </div>
+                    <div class="absolute h-full w-full rounded-2xl border border-slate-200 bg-white p-6" style="backface-visibility: hidden; transform: rotateY(180deg);">
+                        <div class="flex h-full items-center justify-around text-center"><div class="h-full w-px bg-slate-200 absolute left-1/2 top-0 -ml-px"></div><div><p class="text-sm font-medium text-slate-500">Mentah</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalRawItems }}</p></div><div><p class="text-sm font-medium text-slate-500">Jadi</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalFinishedItems }}</p></div></div>
+                        <div class="absolute bottom-4 right-4 text-slate-300 transition-colors group-hover:text-slate-500"><i class="fas fa-sync-alt"></i></div>
+                    </div>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-lg">
-                    <h3 class="font-bold text-slate-800 mb-4">Tren Transaksi</h3>
-                    <div class="h-64"><canvas id="transactionTrendChart"></canvas></div>
+            </div>
+            <div class="group h-[116px]" style="perspective: 1000px">
+                <div x-data="{ flipped: false }" @click="flipped = !flipped" class="relative h-full w-full cursor-pointer transition-transform duration-500" style="transform-style: preserve-3d;" :class="{ '[transform:rotateY(180deg)]': flipped }">
+                    <div class="absolute h-full w-full rounded-2xl border border-slate-200 bg-white p-6" style="backface-visibility: hidden;">
+                        <p class="text-sm font-medium text-slate-500">Total Stok Tersedia</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalStock }}</p>
+                        <div class="absolute bottom-4 right-4 text-slate-300 transition-colors group-hover:text-slate-500"><i class="fas fa-sync-alt"></i></div>
+                    </div>
+                    <div class="absolute h-full w-full rounded-2xl border border-slate-200 bg-white p-6" style="backface-visibility: hidden; transform: rotateY(180deg);">
+                        <div class="flex h-full items-center justify-around text-center"><div class="h-full w-px bg-slate-200 absolute left-1/2 top-0 -ml-px"></div><div><p class="text-sm font-medium text-slate-500">Mentah</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalRawStock }}</p></div><div><p class="text-sm font-medium text-slate-500">Jadi</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalFinishedStock }}</p></div></div>
+                        <div class="absolute bottom-4 right-4 text-slate-300 transition-colors group-hover:text-slate-500"><i class="fas fa-sync-alt"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-6">
+                <p class="text-sm font-medium text-slate-500">Total Pengguna</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalUsers }}</p>
+            </div>
+            <div class="group h-[116px]" style="perspective: 1000px">
+                <div x-data="{ flipped: false }" @click="flipped = !flipped" class="relative h-full w-full cursor-pointer transition-transform duration-500" style="transform-style: preserve-3d;" :class="{ '[transform:rotateY(180deg)]': flipped }">
+                    <div class="absolute h-full w-full rounded-2xl border bg-green-50 border-green-200 p-6" style="backface-visibility: hidden;">
+                        <p class="text-sm font-medium text-green-600">Total Barang Masuk</p><p class="mt-1 text-3xl font-bold text-green-800">{{ $totalIn }}</p>
+                        <div class="absolute bottom-4 right-4 text-green-300 transition-colors group-hover:text-green-500"><i class="fas fa-sync-alt"></i></div>
+                    </div>
+                    <div class="absolute h-full w-full rounded-2xl border bg-green-50 border-green-200 p-6" style="backface-visibility: hidden; transform: rotateY(180deg);">
+                        <div class="flex h-full items-center justify-around text-center"><div class="h-full w-px bg-green-200 absolute left-1/2 top-0 -ml-px"></div><div><p class="text-sm font-medium text-green-600">Mentah</p><p class="mt-1 text-3xl font-bold text-green-800">{{ $totalInRaw }}</p></div><div><p class="text-sm font-medium text-green-600">Jadi</p><p class="mt-1 text-3xl font-bold text-green-800">{{ $totalInFinished }}</p></div></div>
+                        <div class="absolute bottom-4 right-4 text-green-300 transition-colors group-hover:text-green-500"><i class="fas fa-sync-alt"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="group h-[116px]" style="perspective: 1000px">
+                <div x-data="{ flipped: false }" @click="flipped = !flipped" class="relative h-full w-full cursor-pointer transition-transform duration-500" style="transform-style: preserve-3d;" :class="{ '[transform:rotateY(180deg)]': flipped }">
+                    <div class="absolute h-full w-full rounded-2xl border bg-yellow-50 border-yellow-200 p-6" style="backface-visibility: hidden;">
+                        <p class="text-sm font-medium text-yellow-600">Total Barang Keluar</p><p class="mt-1 text-3xl font-bold text-yellow-800">{{ $totalOut }}</p>
+                        <div class="absolute bottom-4 right-4 text-yellow-300 transition-colors group-hover:text-yellow-500"><i class="fas fa-sync-alt"></i></div>
+                    </div>
+                    <div class="absolute h-full w-full rounded-2xl border bg-yellow-50 border-yellow-200 p-6" style="backface-visibility: hidden; transform: rotateY(180deg);">
+                        <div class="flex h-full items-center justify-around text-center">
+                            <div><p class="text-xs font-medium text-yellow-600">Terpakai</p><p class="mt-1 text-2xl font-bold text-yellow-800">{{ $totalOutUsed }}</p></div><div class="h-full w-px bg-yellow-200"></div><div><p class="text-xs font-medium text-yellow-600">Kirim Mentah</p><p class="mt-1 text-2xl font-bold text-yellow-800">{{ $totalOutShippedRaw }}</p></div><div class="h-full w-px bg-yellow-200"></div><div><p class="text-xs font-medium text-yellow-600">Kirim Jadi</p><p class="mt-1 text-2xl font-bold text-yellow-800">{{ $totalOutShippedFinished }}</p></div>
+                        </div>
+                        <div class="absolute bottom-4 right-4 text-yellow-300 transition-colors group-hover:text-yellow-500"><i class="fas fa-sync-alt"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="group h-[116px]" style="perspective: 1000px">
+                <div x-data="{ flipped: false }" @click="flipped = !flipped" class="relative h-full w-full cursor-pointer transition-transform duration-500" style="transform-style: preserve-3d;" :class="{ '[transform:rotateY(180deg)]': flipped }">
+                    <div class="absolute h-full w-full rounded-2xl border bg-red-50 border-red-200 p-6" style="backface-visibility: hidden;">
+                        <p class="text-sm font-medium text-red-600">Total Barang Rusak</p><p class="mt-1 text-3xl font-bold text-red-800">{{ $totalDamaged }}</p>
+                        <div class="absolute bottom-4 right-4 text-red-300 transition-colors group-hover:text-red-500"><i class="fas fa-sync-alt"></i></div>
+                    </div>
+                    <div class="absolute h-full w-full rounded-2xl border bg-red-50 border-red-200 p-6" style="backface-visibility: hidden; transform: rotateY(180deg);">
+                        <div class="flex h-full items-center justify-around text-center"><div class="h-full w-px bg-red-200 absolute left-1/2 top-0 -ml-px"></div><div><p class="text-sm font-medium text-red-600">Mentah</p><p class="mt-1 text-3xl font-bold text-red-800">{{ $totalDamagedRaw }}</p></div><div><p class="text-sm font-medium text-red-600">Jadi</p><p class="mt-1 text-3xl font-bold text-red-800">{{ $totalDamagedFinished }}</p></div></div>
+                        <div class="absolute bottom-4 right-4 text-red-300 transition-colors group-hover:text-red-500"><i class="fas fa-sync-alt"></i></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    @if($isModalOpenData)
-    <div x-data="{ show: @entangle('isModalOpenData') }" x-show="show" x-transition.opacity.duration.300ms class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-        <div x-show="show" x-transition.scale.duration.300ms @click.away="show = false" class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
-            <form wire:submit.prevent="changeData">
-                <div class="p-6 bg-blue-600 text-white flex items-center justify-between">
-                    <h3 class="text-xl font-bold flex items-center"><i class="fas fa-user-edit mr-3"></i><span>Ubah Data Diri</span></h3>
-                    <button type="button" @click="show = false" class="text-blue-200 hover:text-white text-3xl">&times;</button>
-                </div>
-                <div class="p-8 space-y-6">
-                    <div>
-                        <label class="text-xs font-semibold text-slate-500 uppercase">Nama Lengkap</label>
-                        <input wire:model="name" type="text" class="mt-1 block w-full bg-transparent border-0 border-b-2 border-slate-200 p-0 pb-2 focus:ring-0 focus:border-blue-500" required>
-                        @error('name')<span class="text-red-500 text-xs">{{$message}}</span>@enderror
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-slate-500 uppercase">Username</label>
-                        <input wire:model="username" type="text" class="mt-1 block w-full bg-slate-100 border-0 border-b-2 border-slate-200 p-2 focus:ring-0" required readonly>
-                    </div>
-                    <hr>
-                    <div>
-                        <label class="text-xs font-semibold text-slate-500 uppercase">Password Anda <span class="text-red-500 normal-case">(Wajib untuk konfirmasi)</span></label>
-                        <input wire:model="confirmationPassword" type="password" class="mt-1 block w-full bg-transparent border-0 border-b-2 border-slate-200 p-0 pb-2 focus:ring-0 focus:border-blue-500" required>
-                        @error('confirmationPassword') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                    </div>
-                </div>
-                <div class="p-6 bg-slate-50 rounded-b-xl flex justify-end space-x-3 border-t">
-                    <button type="button" @click="show = false" class="px-4 py-2.5 border rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50">Batal</button>
-                    <button type="submit" class="inline-flex items-center px-4 py-2.5 border text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700">Simpan Perubahan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    @endif
-
-    @if($isModalOpen)
-    <div x-data="{ show: @entangle('isModalOpen') }" x-show="show" x-transition.opacity.duration.300ms class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" x-cloak>
-        <div x-show="show" x-transition.scale.duration.300ms @click.away="show = false" class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
-            <form wire:submit.prevent="changePassword">
-                <div class="p-6 bg-yellow-500 text-white flex items-center justify-between"><h3 class="text-xl font-bold flex items-center"><i class="fas fa-key mr-3"></i><span>Ubah Password</span></h3><button type="button" @click="show = false" class="text-yellow-100 hover:text-white text-3xl">&times;</button></div>
-                <div class="p-8 space-y-6">
-                    <div><label class="text-xs font-semibold text-slate-500 uppercase">Password Saat Ini</label><input wire:model="password" type="password" class="mt-1 block w-full bg-transparent border-0 border-b-2 border-slate-200 p-0 pb-2 focus:ring-0 focus:border-yellow-500" required>@error('password') <span class="text-red-500 text-xs">{{$message}}</span> @enderror</div>
-                    <div><label class="text-xs font-semibold text-slate-500 uppercase">Password Baru</label><input wire:model="newPassword" type="password" class="mt-1 block w-full bg-transparent border-0 border-b-2 border-slate-200 p-0 pb-2 focus:ring-0 focus:border-yellow-500" required>@error('newPassword') <span class="text-red-500 text-xs">{{$message}}</span> @enderror</div>
-                    <div><label class="text-xs font-semibold text-slate-500 uppercase">Konfirmasi Password Baru</label><input wire:model="confPass" type="password" class="mt-1 block w-full bg-transparent border-0 border-b-2 border-slate-200 p-0 pb-2 focus:ring-0 focus:border-yellow-500" required>@error('confPass') <span class="text-red-500 text-xs">{{$message}}</span> @enderror</div>
-                </div>
-                <div class="p-6 bg-slate-50 rounded-b-xl flex justify-end space-x-3 border-t"><button type="button" @click="show = false" class="px-4 py-2.5 border rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50">Batal</button><button type="submit" class="inline-flex items-center px-4 py-2.5 border text-sm font-medium rounded-lg text-white bg-yellow-500 hover:bg-yellow-600">Simpan Password Baru</button></div>
-            </form>
-        </div>
-    </div>
-    @endif
 </div>
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
-<script>
-    function initDashboardCharts(data) {
-        if (window.dashboardCharts) {
-            Object.values(window.dashboardCharts).forEach(chart => chart.destroy());
-        }
-        window.dashboardCharts = {};
-
-        Chart.defaults.color = '#64748b';
-        Chart.defaults.borderColor = 'rgba(0, 0, 0, 0.05)';
-
-        window.dashboardCharts.topStockChart = new Chart(document.getElementById('topStockChart'), {
-            type: 'bar',
-            data: { labels: data.topStockLabels, datasets: [{ label: 'Stok', data: data.topStockData, backgroundColor: data.chartPalette1, borderRadius: 4 }] },
-            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } }
-        });
-
-        window.dashboardCharts.categoryChart = new Chart(document.getElementById('categoryChart'), {
-            type: 'polarArea',
-            data: { labels: data.categoryLabels, datasets: [{ data: data.categoryData, backgroundColor: data.chartPalette1 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-        });
-
-        window.dashboardCharts.transactionTrendChart = new Chart(document.getElementById('transactionTrendChart'), {
-            type: 'doughnut',
-            data: { labels: data.trendLabels, datasets: [{ data: data.trendData, backgroundColor: ['#28a745', '#ffc107', '#dc3545'], borderWidth: 0 }] },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
-        });
-    }
-
-    initDashboardCharts({
-        topStockLabels: @json($topStockLabels), topStockData: @json($topStockData),
-        categoryLabels: @json($categoryLabels), categoryData: @json($categoryData),
-        trendLabels: @json($trendLabels), trendData: @json($trendData),
-        chartPalette1: @json($chartPalette1)
-    });
-</script>
-@endpush
-
-@script
-<script>
-    $wire.on('charts-updated', (event) => {
-        initDashboardCharts(event);
-    });
-</script>
-@endscript
