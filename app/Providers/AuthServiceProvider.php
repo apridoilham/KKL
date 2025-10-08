@@ -16,18 +16,13 @@ class AuthServiceProvider extends ServiceProvider
     {
         $checkRole = fn($user, $roles) => in_array(strtolower(trim($user->role)), (array)$roles);
 
+        Gate::define('view-dashboard', fn(User $user) => $checkRole($user, 'admin'));
         Gate::define('manage-users', fn(User $user) => $checkRole($user, 'admin'));
-
         Gate::define('manage-items', fn(User $user) => $checkRole($user, 'admin'));
-
         Gate::define('manage-transactions', fn(User $user) => $checkRole($user, ['admin', 'pengiriman']));
-        
         Gate::define('edit-transactions', fn(User $user) => $checkRole($user, 'admin'));
-
         Gate::define('manage-production', fn(User $user) => $checkRole($user, ['admin', 'produksi']));
-
         Gate::define('view-pages', fn(User $user) => $checkRole($user, ['admin', 'produksi', 'pengiriman']));
-
         Gate::define('view-reports', fn(User $user) => $checkRole($user, 'admin'));
     }
 }

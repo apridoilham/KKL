@@ -21,14 +21,15 @@
                     <td class="px-6 py-4">
                         @php
                             $types = [
-                                'masuk_mentah'    => ['text' => 'Masuk (Mentah)', 'class' => 'bg-green-100 text-green-800'],
-                                'masuk_jadi'      => ['text' => 'Masuk (Jadi)', 'class' => 'bg-green-100 text-green-800'],
-                                'keluar_terpakai' => ['text' => 'Keluar (Terpakai)', 'class' => 'bg-yellow-100 text-yellow-800'],
-                                'keluar_dikirim'  => ['text' => 'Keluar (Dikirim)', 'class' => 'bg-yellow-100 text-yellow-800'],
-                                'keluar_mentah'   => ['text' => 'Keluar (Mentah)', 'class' => 'bg-yellow-100 text-yellow-800'],
-                                'rusak'           => ['text' => 'Rusak', 'class' => 'bg-red-100 text-red-800'],
+                                'masuk_mentah' => ['text' => 'Masuk (Bahan Mentah)', 'class' => 'bg-green-100 text-green-800'],
+                                'masuk_jadi' => ['text' => 'Masuk (Barang Jadi)', 'class' => 'bg-sky-100 text-sky-800'],
+                                'keluar_terpakai' => ['text' => 'Keluar (Terpakai)', 'class' => 'bg-orange-100 text-orange-800'],
+                                'keluar_dikirim' => ['text' => 'Keluar (Kirim - Jadi)', 'class' => 'bg-yellow-100 text-yellow-800'],
+                                'keluar_mentah' => ['text' => 'Keluar (Kirim - Mentah)', 'class' => 'bg-yellow-100 text-yellow-800'],
+                                'rusak_mentah' => ['text' => 'Rusak (Bahan Mentah)', 'class' => 'bg-red-100 text-red-800'],
+                                'rusak_jadi' => ['text' => 'Rusak (Barang Jadi)', 'class' => 'bg-red-100 text-red-800'],
                             ];
-                            $typeInfo = $types[$transaction->type] ?? ['text' => 'Lainnya', 'class' => 'bg-slate-100 text-slate-800'];
+                            $typeInfo = $types[$transaction->type] ?? ['text' => ucfirst(str_replace('_', ' ', $transaction->type)), 'class' => 'bg-slate-100 text-slate-800'];
                         @endphp
                         <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $typeInfo['class'] }}">
                             {{ $typeInfo['text'] }}

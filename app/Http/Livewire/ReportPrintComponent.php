@@ -2,13 +2,13 @@
 
 namespace App\Http\Livewire;
 
-use App\Traits\BuildsReportQuery; // Import trait
+use App\Traits\BuildsReportQuery;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 
 class ReportPrintComponent extends Component
 {
-    use BuildsReportQuery; // Gunakan trait
+    use BuildsReportQuery;
 
     public $reportData;
     public string $titleData = 'Laporan Inventaris';
@@ -16,14 +16,12 @@ class ReportPrintComponent extends Component
     public string $filter, $filterBy;
     public array $params;
 
-    // HAPUS metode buildReportQuery karena sudah ada di trait
-
     public function mount(): void
     {
         $this->data = ['title' => 'Cetak Laporan', 'urlPath' => 'report'];
         $requestData = request()->query();
         $validator = Validator::make($requestData, [
-            'filter' => 'required|in:item,in,out,damaged,pembelian_masuk,produksi_masuk,produksi_keluar,pengiriman_keluar,rusak',
+            'filter' => 'required|in:item,in,out,damaged,masuk_mentah,masuk_jadi,keluar_terpakai,keluar_dikirim,keluar_mentah,rusak',
             'filterBy' => 'required|in:date,month,year',
             'dateFrom' => 'required_if:filterBy,date|date',
             'dateUntil' => 'required_if:filterBy,date|date',
@@ -31,19 +29,23 @@ class ReportPrintComponent extends Component
             'monthUntil' => 'required_if:filterBy,month|integer',
             'selectYear' => 'required_if:filterBy,month,year|integer',
         ]);
+
         if ($validator->fails()) {
             $this->reportData = null;
             session()->flash('dataSession', ['status' => 'failed', 'message' => 'Parameter laporan tidak valid.']);
             return;
         }
+
         $validated = $validator->validated();
         $this->filter = $validated['filter'];
         $this->filterBy = $validated['filterBy'];
         $this->params = $validated;
         $this->reportData = $this->buildReportQuery($this->filter, $this->filterBy, $this->params)->get();
+
         if ($this->reportData->isEmpty()) {
             session()->flash('dataSession', ['status' => 'failed', 'message' => 'Tidak ada data yang ditemukan untuk dicetak.']);
         }
+
         switch ($this->filter) {
             case 'item': $this->titleData = 'Laporan Data Barang'; break;
             case 'in': $this->titleData = 'Laporan Barang Masuk'; break;

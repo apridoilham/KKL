@@ -5,7 +5,6 @@ namespace App\Http\Livewire;
 use App\Models\Item;
 use App\Models\Transaction;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
@@ -31,6 +30,8 @@ class TransactionComponent extends Component
     public string $filterDate;
     public string $filterMonth;
     public string $filterYear;
+    public string $filterSelectedMonth;
+    public string $filterSelectedYear;
 
     protected array $queryString = [
         'search' => ['except' => ''], 'perPage' => ['except' => 10], 'filterType' => ['except' => 'all'],
@@ -47,8 +48,10 @@ class TransactionComponent extends Component
     {
         $this->filterDateType = 'all_time';
         $this->filterDate = now()->format('Y-m-d');
-        $this->filterMonth = now()->format('Y-m');
         $this->filterYear = now()->format('Y');
+        $this->filterSelectedMonth = now()->format('m');
+        $this->filterSelectedYear = now()->format('Y');
+        $this->filterMonth = now()->format('Y-m');
         if ($resetPage) {
             $this->resetPage();
         }
@@ -61,6 +64,16 @@ class TransactionComponent extends Component
         }
     }
 
+    public function updatedFilterSelectedMonth(): void
+    {
+        $this->filterMonth = $this->filterSelectedYear . '-' . $this->filterSelectedMonth;
+    }
+
+    public function updatedFilterSelectedYear(): void
+    {
+        $this->filterMonth = $this->filterSelectedYear . '-' . $this->filterSelectedMonth;
+    }
+
     public function updatedType($value): void
     {
         $this->loadItems($value);
@@ -71,8 +84,8 @@ class TransactionComponent extends Component
         $query = Item::query();
 
         match ($type) {
-            'masuk_mentah', 'keluar_mentah' => $query->where('item_type', 'barang_mentah'),
-            'masuk_jadi', 'keluar_dikirim' => $query->where('item_type', 'barang_jadi'),
+            'masuk_mentah', 'keluar_mentah', 'rusak_mentah' => $query->where('item_type', 'barang_mentah'),
+            'masuk_jadi', 'keluar_dikirim', 'rusak_jadi' => $query->where('item_type', 'barang_jadi'),
             default => null,
         };
 
@@ -91,11 +104,6 @@ class TransactionComponent extends Component
         Gate::authorize('manage-transactions');
         $this->resetInputFields();
         $this->isModalOpen = true;
-    }
-
-    private function clearStatsCache(): void
-    {
-        Cache::flush();
     }
 
     public function edit(int $id): void
@@ -128,16 +136,20 @@ class TransactionComponent extends Component
 
         $this->validate([
             'itemId' => 'required|exists:items,id',
-            'type' => 'required|in:masuk_mentah,masuk_jadi,keluar_dikirim,keluar_mentah,rusak',
+            'type' => 'required|in:masuk_mentah,masuk_jadi,keluar_dikirim,keluar_mentah,rusak_mentah,rusak_jadi',
             'quantity' => 'required|numeric|min:1',
             'description' => 'nullable|string'
+        ], [
+            'quantity.required' => 'Kuantitas tidak boleh kosong.',
+            'quantity.min' => 'Kuantitas minimal harus 1.',
+            'itemId.required' => 'Anda harus memilih barang.',
         ]);
 
         try {
             DB::transaction(function () {
                 $stockInTypes = ['masuk_mentah', 'masuk_jadi'];
 
-                if ($this->id) { // Logic for UPDATE
+                if ($this->id) {
                     $transaction = Transaction::findOrFail($this->id);
                     $oldItem = $transaction->item;
 
@@ -161,7 +173,7 @@ class TransactionComponent extends Component
                         'description' => $this->description,
                     ]);
 
-                } else { // Logic for CREATE
+                } else {
                     $item = Item::findOrFail($this->itemId);
                     if (in_array($this->type, $stockInTypes)) {
                         $item->increaseStock($this->quantity);
@@ -177,7 +189,6 @@ class TransactionComponent extends Component
                 }
             });
 
-            $this->clearStatsCache();
             $this->dispatch('toast', status: 'success', message: $this->id ? 'Transaksi berhasil diperbarui.' : 'Transaksi berhasil dibuat.');
             $this->isModalOpen = false;
             $this->resetInputFields();
@@ -191,7 +202,7 @@ class TransactionComponent extends Component
     {
         Gate::authorize('manage-transactions');
         $transaction = Transaction::findOrFail($id);
-        
+
         if (in_array($transaction->type, ['masuk_jadi', 'keluar_terpakai'])) {
             $this->dispatch('toast', status: 'failed', message: 'Transaksi produksi tidak dapat dihapus manual.');
             return;
@@ -216,7 +227,6 @@ class TransactionComponent extends Component
                 $transaction->delete();
             });
 
-            $this->clearStatsCache();
             $this->dispatch('toast', status: 'success', message: 'Transaksi dihapus, stok dikembalikan.');
         } catch (\Exception $e) {
             $this->dispatch('toast', status: 'failed', message: $e->getMessage());
@@ -246,7 +256,7 @@ class TransactionComponent extends Component
                         $date = Carbon::parse($this->filterMonth);
                         $transactionsQuery->whereYear('created_at', $date->year)->whereMonth('created_at', $date->month);
                     } catch (\Exception $e) {
-                        // Abaikan jika format bulan tidak valid
+
                     }
                     break;
                 case 'yearly':

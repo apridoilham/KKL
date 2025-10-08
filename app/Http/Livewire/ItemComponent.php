@@ -3,7 +3,6 @@
 namespace App\Http\Livewire;
 
 use App\Models\Item;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -32,7 +31,7 @@ class ItemComponent extends Component
     {
         $title = 'Manajemen Semua Barang';
         if ($this->filterType === 'barang_mentah') {
-            $title = 'Manajemen Barang Mentah';
+            $title = 'Manajemen Bahan Mentah';
         } elseif ($this->filterType === 'barang_jadi') {
             $title = 'Manajemen Barang Jadi';
         }
@@ -49,18 +48,13 @@ class ItemComponent extends Component
         $this->reset(['id', 'code', 'category', 'name']);
     }
 
-    private function clearStatsCache(): void
-    {
-        Cache::forget('dashboard-stats-all_time-');
-    }
-
     public function create(): void
     {
         Gate::authorize('manage-items');
         $this->resetInputFields();
-        
+
         $this->item_type = $this->filterType ?? 'barang_mentah';
-        
+
         $this->isModalOpen = true;
     }
 
@@ -84,11 +78,10 @@ class ItemComponent extends Component
 
         Item::updateOrCreate(['id' => $this->id], $dataToSave);
 
-        $this->clearStatsCache();
         $this->dispatch(
             'toast',
             status: 'success',
-            message: $this->id ? 'Barang berhasil diperbarui.' : 'Barang baru berhasil dibuat.'
+            message: $this->id ? 'Bahan berhasil diperbarui.' : 'Bahan baru berhasil dibuat.'
         );
         $this->isModalOpen = false;
         $this->resetInputFields();
@@ -111,10 +104,9 @@ class ItemComponent extends Component
         Gate::authorize('manage-items');
         try {
             Item::findOrFail($id)->delete();
-            $this->clearStatsCache();
             $this->dispatch('toast', status: 'success', message: 'Data berhasil dihapus.');
         } catch (\Exception $e) {
-            $this->dispatch('toast', status: 'failed', message: 'Gagal! Barang terhubung dengan transaksi.');
+            $this->dispatch('toast', status: 'failed', message: 'Gagal! Bahan terhubung dengan transaksi.');
         }
     }
 

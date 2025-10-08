@@ -4,9 +4,9 @@
             <h1 class="text-3xl font-extrabold text-slate-900">{{ $data['title'] }}</h1>
             <p class="mt-1 text-slate-500">
                 @if($items->total() > 0)
-                    Menampilkan {{ $items->firstItem() }}-{{ $items->lastItem() }} dari {{ $items->total() }} barang.
+                    Menampilkan {{ $items->firstItem() }}-{{ $items->lastItem() }} dari {{ $items->total() }} item.
                 @else
-                    Belum ada data barang untuk tipe ini.
+                    Belum ada data untuk tipe ini.
                 @endif
             </p>
         </div>
@@ -15,12 +15,12 @@
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                     <i class="fas fa-search text-slate-400"></i>
                 </div>
-                <input wire:model.live.debounce.300ms="search" type="text" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" placeholder="Cari barang...">
+                <input wire:model.live.debounce.300ms="search" type="text" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" placeholder="Cari...">
             </div>
             @can('manage-items')
             <button wire:click="create" class="inline-flex flex-shrink-0 items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800">
                 <i class="fas fa-plus mr-2"></i>
-                Tambah Barang
+                Tambah Item
             </button>
             @endcan
         </div>
@@ -53,7 +53,7 @@
                             <td class="px-6 py-4">{{ $item->category ?: '-' }}</td>
                             <td class="px-6 py-4">
                                 <span class="rounded px-2 py-1 text-xs font-medium {{ $item->item_type == 'barang_jadi' ? 'bg-cyan-50 text-cyan-700' : 'bg-slate-100 text-slate-600' }}">
-                                    {{ $item->item_type == 'barang_jadi' ? 'Barang Jadi' : 'Barang Mentah' }}
+                                    {{ $item->item_type == 'barang_jadi' ? 'Barang Jadi' : 'Bahan Mentah' }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 font-extrabold text-xl text-slate-700">{{ floatval($item->quantity) }}</td>
@@ -63,7 +63,7 @@
                             <td class="px-6 py-4 text-center">
                                 <div class="flex items-center justify-center space-x-2">
                                     <button wire:click="edit({{ $item->id }})" class="p-2 rounded-full text-slate-400 hover:text-amber-500" title="Ubah Data"><i class="fas fa-pen fa-sm"></i></button>
-                                    <button wire:click="delete({{ $item->id }})" wire:confirm="Anda yakin ingin menghapus barang ini?" class="p-2 rounded-full text-slate-400 hover:text-red-500" title="Hapus Data"><i class="fas fa-trash fa-sm"></i></button>
+                                    <button wire:click="delete({{ $item->id }})" wire:confirm="Anda yakin ingin menghapus item ini?" class="p-2 rounded-full text-slate-400 hover:text-red-500" title="Hapus Data"><i class="fas fa-trash fa-sm"></i></button>
                                 </div>
                             </td>
                             @endcan
@@ -72,11 +72,11 @@
                         <tr>
                             <td colspan="{{ Gate::check('manage-items') ? '9' : '8' }}" class="px-4 py-16 text-center">
                                 <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
-                                <h3 class="mt-2 text-lg font-semibold text-slate-800">Barang Tidak Ditemukan</h3>
+                                <h3 class="mt-2 text-lg font-semibold text-slate-800">Item Tidak Ditemukan</h3>
                                 <p class="mt-1 text-sm text-slate-500">Tidak ada data yang cocok dengan pencarian Anda.</p>
                                 @can('manage-items')
                                 <div class="mt-6">
-                                    <button wire:click="create" class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"><i class="fas fa-plus mr-2"></i>Tambah Barang</button>
+                                    <button wire:click="create" class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"><i class="fas fa-plus mr-2"></i>Tambah Item</button>
                                 </div>
                                 @endcan
                             </td>
@@ -94,17 +94,17 @@
             <div x-show="show" x-transition.scale.duration-300ms @click.away="show = false" class="w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
                 <form wire:submit.prevent="store">
                     <div class="flex items-center justify-between border-b border-slate-200 p-6">
-                        <h3 class="flex items-center text-xl font-bold text-slate-800"><i class="fas {{ $id ? 'fa-pencil-alt' : 'fa-plus-circle' }} mr-3 text-slate-400"></i><span>{{ $id ? 'Ubah' : 'Tambah' }} {{ $item_type == 'barang_jadi' ? 'Barang Jadi' : 'Barang Mentah' }}</span></h3>
+                        <h3 class="flex items-center text-xl font-bold text-slate-800"><i class="fas {{ $id ? 'fa-pencil-alt' : 'fa-plus-circle' }} mr-3 text-slate-400"></i><span>{{ $id ? 'Ubah' : 'Tambah' }} {{ $item_type == 'barang_jadi' ? 'Barang Jadi' : 'Bahan Mentah' }}</span></h3>
                         <button type="button" @click="show = false" class="text-3xl text-slate-400 hover:text-slate-600">&times;</button>
                     </div>
                     <div class="space-y-6 p-8">
-                        <div><label for="name" class="text-xs font-semibold uppercase text-slate-500">Nama Barang <span class="text-red-500">*</span></label><input wire:model="name" type="text" id="name" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0" placeholder="cth: Tepung Terigu" required>@error('name') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror</div>
-                        <div><label for="category" class="text-xs font-semibold uppercase text-slate-500">Kategori</label><input wire:model="category" type="text" id="category" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0" placeholder="cth: Bahan Kue"></div>
-                        <div><label for="code" class="text-xs font-semibold uppercase text-slate-500">Kode Barang</label><input wire:model="code" type="text" id="code" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0" placeholder="cth: TPG-001"></div>
+                        <div><label for="name" class="text-xs font-semibold uppercase text-slate-500">Nama Item <span class="text-red-500">*</span></label><input wire:model="name" type="text" id="name" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0" required>@error('name') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror</div>
+                        <div><label for="category" class="text-xs font-semibold uppercase text-slate-500">Kategori</label><input wire:model="category" type="text" id="category" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0"></div>
+                        <div><label for="code" class="text-xs font-semibold uppercase text-slate-500">Kode Item</label><input wire:model="code" type="text" id="code" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0"></div>
                     </div>
                     <div class="flex justify-end space-x-3 rounded-b-xl border-t border-slate-200 bg-slate-50 p-6">
                         <button type="button" @click="show = false" class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100">Batal</button>
-                        <button type="submit" class="inline-flex items-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800">Simpan Barang</button>
+                        <button type="submit" class="inline-flex items-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800">Simpan Item</button>
                     </div>
                 </form>
             </div>

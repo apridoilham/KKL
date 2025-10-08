@@ -18,7 +18,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', HomeComponent::class)->name('home');
+    Route::get('/', HomeComponent::class)->name('home')->middleware('non-admin.redirect');
     Route::get('/profile', ProfileComponent::class)->name('profile');
     Route::get('/item', ItemComponent::class);
     Route::get('/transaction', TransactionComponent::class);

@@ -33,7 +33,7 @@ class ProductionComponent extends Component
     {
         if (empty($value) || !is_numeric($value) || $value < 1) {
             $this->quantityToProduce = 1;
-            $this->dispatch('toast', status: 'failed', message: 'Jumlah produksi harus bilangan bulat minimal 1.');
+            $this->dispatch('toast', status: 'failed', message: 'Jumlah produksi minimal harus 1.');
         }
     }
 
@@ -105,7 +105,7 @@ class ProductionComponent extends Component
         $finishedGood->bomRawMaterials()->detach($rawMaterialId);
     }
 
-    public function produce(): void
+    public function produce(): mixed
     {
         $this->validate([
             'selectedFinishedGoodId' => 'required|exists:items,id',
@@ -141,11 +141,11 @@ class ProductionComponent extends Component
                 ]);
             });
 
-            $this->dispatch('toast', status: 'success', message: 'Produksi berhasil dicatat.');
-            $this->reset(['selectedFinishedGoodId', 'quantityToProduce']);
+            return redirect('/production')->with('status', 'Produksi berhasil dicatat.');
 
         } catch (\Exception $e) {
             $this->dispatch('toast', status: 'failed', message: $e->getMessage());
+            return null;
         }
     }
 

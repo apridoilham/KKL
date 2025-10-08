@@ -34,13 +34,13 @@
                         <div>
                             <label for="username" class="text-sm font-medium text-slate-700">Username</label>
                             <input wire:model="username" id="username" type="text" class="mt-1 block w-full rounded-lg border border-slate-300 py-2 px-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
-                             @error('username') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                            @error('username') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                         </div>
                         <hr>
                         <div>
                             <label for="confirmation_password_data" class="text-sm font-medium text-slate-700">Konfirmasi dengan Password Anda</label>
                             <input wire:model="confirmation_password" id="confirmation_password_data" type="password" class="mt-1 block w-full rounded-lg border border-slate-300 py-2 px-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500" required>
-                             @error('confirmation_password') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                            @error('confirmation_password') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                         </div>
                     </div>
                     <div class="flex justify-end rounded-b-xl border-t border-slate-200 bg-slate-50 p-6">
@@ -63,7 +63,7 @@
                         <div>
                             <label for="new_password" class="text-sm font-medium text-slate-700">Password Baru</label>
                             <input wire:model="new_password" id="new_password" type="password" class="mt-1 block w-full rounded-lg border border-slate-300 py-2 px-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500" required>
-                             @error('new_password') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                            @error('new_password') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="new_password_confirmation" class="text-sm font-medium text-slate-700">Konfirmasi Password Baru</label>

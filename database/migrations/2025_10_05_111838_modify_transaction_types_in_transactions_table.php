@@ -9,13 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            // Mengubah tipe kolom untuk mendukung jenis transaksi yang lebih spesifik
             $table->enum('type', [
-                'pembelian_masuk',    // Sebelumnya 'in'
-                'produksi_masuk',     // BARU: Barang jadi yang selesai diproduksi
-                'produksi_keluar',    // BARU: Bahan mentah yang dipakai untuk produksi
-                'pengiriman_keluar',  // Sebelumnya 'out'
-                'rusak'               // Sebelumnya 'damaged'
+                'pembelian_masuk',
+                'produksi_masuk',
+                'produksi_keluar',
+                'pengiriman_keluar',
+                'rusak'
             ])->change();
         });
     }
@@ -23,8 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            // Mengembalikan ke state semula jika migrasi di-rollback
-             $table->enum('type', ['in', 'out', 'damaged'])->change();
+            $table->enum('type', ['in', 'out', 'damaged'])->change();
         });
     }
 };

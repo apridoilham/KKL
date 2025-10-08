@@ -20,10 +20,12 @@
     </div>
     
     <nav class="flex-1 space-y-2 overflow-y-auto p-4">
+        @can('view-dashboard')
         <a class="flex items-center rounded-lg px-4 py-2.5 text-sm font-medium transition-colors {{ $data['urlPath'] == 'home' ? 'bg-amber-50 text-amber-700 font-semibold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}" href="/">
             <i class="fas fa-fw fa-tachometer-alt w-5 text-center"></i>
             <span class="mx-4">Dashboard</span>
         </a>
+        @endcan
         
         <p class="px-4 pt-4 pb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">Manajemen</p>
 
@@ -35,11 +37,11 @@
                 </span>
                 <i class="fas text-xs" :class="{ 'fa-chevron-down': !open, 'fa-chevron-up': open }"></i>
             </button>
-            <div x-show="open" x-transition class="mt-2 space-y-2 pl-8">
-                <a href="/item?type=barang_mentah" class="block rounded-md py-2 text-sm {{ request()->get('type') == 'barang_mentah' ? 'font-semibold text-slate-800' : 'text-slate-500 hover:text-slate-800' }}">
-                    Barang Mentah
+            <div x-show="open" x-transition class="mt-2 space-y-2 pl-6">
+                <a href="/item?type=barang_mentah" class="block rounded-lg px-4 py-2.5 text-sm transition-colors {{ request()->get('type') == 'barang_mentah' ? 'bg-amber-50 text-amber-700 font-semibold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+                    Bahan Mentah
                 </a>
-                <a href="/item?type=barang_jadi" class="block rounded-md py-2 text-sm {{ request()->get('type') == 'barang_jadi' ? 'font-semibold text-slate-800' : 'text-slate-500 hover:text-slate-800' }}">
+                <a href="/item?type=barang_jadi" class="block rounded-lg px-4 py-2.5 text-sm transition-colors {{ request()->get('type') == 'barang_jadi' ? 'bg-amber-50 text-amber-700 font-semibold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                     Barang Jadi
                 </a>
             </div>

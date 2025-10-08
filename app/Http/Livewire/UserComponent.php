@@ -5,7 +5,6 @@ namespace App\Http\Livewire;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Validation\Rule;
@@ -53,11 +52,6 @@ class UserComponent extends Component
         }
     }
 
-    private function clearStatsCache(): void
-    {
-        Cache::forget('dashboard-stats-all_time-');
-    }
-
     public function resetInputFields(): void
     {
         $this->reset(['userId', 'name', 'username', 'role', 'password', 'password_confirmation', 'isModalOpen', 'isEditMode']);
@@ -97,7 +91,6 @@ class UserComponent extends Component
         }
         User::updateOrCreate(['id' => $this->userId], $userData);
 
-        $this->clearStatsCache();
         $this->dispatch(
             'toast',
             status: 'success',
@@ -114,7 +107,6 @@ class UserComponent extends Component
             return;
         }
         User::findOrFail($id)->delete();
-        $this->clearStatsCache();
         $this->dispatch('toast', status: 'success', message: 'Pengguna berhasil dihapus.');
     }
 

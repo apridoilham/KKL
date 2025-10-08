@@ -11,12 +11,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->alias([
+            'non-admin.redirect' => \App\Http\Middleware\RedirectNonAdmin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })
-    // --> TAMBAHKAN BLOK INI <--
     ->withProviders([
         \Livewire\LivewireServiceProvider::class,
     ])

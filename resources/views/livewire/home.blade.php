@@ -91,7 +91,6 @@
 
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             
-            {{-- Kartu-kartu statistik tidak berubah --}}
             <div class="group h-[116px]" style="perspective: 1000px">
                 <div x-data="{ flipped: false }" @click="flipped = !flipped" class="relative h-full w-full cursor-pointer transition-transform duration-500" style="transform-style: preserve-3d;" :class="{ '[transform:rotateY(180deg)]': flipped }">
                     <div class="absolute h-full w-full rounded-2xl border border-slate-200 bg-white p-6" style="backface-visibility: hidden;">
@@ -99,7 +98,7 @@
                         <div class="absolute bottom-4 right-4 text-slate-300 transition-colors group-hover:text-slate-500"><i class="fas fa-sync-alt"></i></div>
                     </div>
                     <div class="absolute h-full w-full rounded-2xl border border-slate-200 bg-white p-6" style="backface-visibility: hidden; transform: rotateY(180deg);">
-                        <div class="flex h-full items-center justify-around text-center"><div class="h-full w-px bg-slate-200 absolute left-1/2 top-0 -ml-px"></div><div><p class="text-sm font-medium text-slate-500">Mentah</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalRawItems }}</p></div><div><p class="text-sm font-medium text-slate-500">Jadi</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalFinishedItems }}</p></div></div>
+                        <div class="flex h-full items-center justify-around text-center"><div class="h-full w-px bg-slate-200 absolute left-1/2 top-0 -ml-px"></div><div><p class="text-xs font-medium text-slate-500">Bahan Mentah</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalRawItems }}</p></div><div><p class="text-xs font-medium text-slate-500">Barang Jadi</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalFinishedItems }}</p></div></div>
                         <div class="absolute bottom-4 right-4 text-slate-300 transition-colors group-hover:text-slate-500"><i class="fas fa-sync-alt"></i></div>
                     </div>
                 </div>
@@ -111,7 +110,7 @@
                         <div class="absolute bottom-4 right-4 text-slate-300 transition-colors group-hover:text-slate-500"><i class="fas fa-sync-alt"></i></div>
                     </div>
                     <div class="absolute h-full w-full rounded-2xl border border-slate-200 bg-white p-6" style="backface-visibility: hidden; transform: rotateY(180deg);">
-                        <div class="flex h-full items-center justify-around text-center"><div class="h-full w-px bg-slate-200 absolute left-1/2 top-0 -ml-px"></div><div><p class="text-sm font-medium text-slate-500">Mentah</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalRawStock }}</p></div><div><p class="text-sm font-medium text-slate-500">Jadi</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalFinishedStock }}</p></div></div>
+                        <div class="flex h-full items-center justify-around text-center"><div class="h-full w-px bg-slate-200 absolute left-1/2 top-0 -ml-px"></div><div><p class="text-xs font-medium text-slate-500">Bahan Mentah</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalRawStock }}</p></div><div><p class="text-xs font-medium text-slate-500">Barang Jadi</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalFinishedStock }}</p></div></div>
                         <div class="absolute bottom-4 right-4 text-slate-300 transition-colors group-hover:text-slate-500"><i class="fas fa-sync-alt"></i></div>
                     </div>
                 </div>
@@ -126,7 +125,7 @@
                         <div class="absolute bottom-4 right-4 text-green-300 transition-colors group-hover:text-green-500"><i class="fas fa-sync-alt"></i></div>
                     </div>
                     <div class="absolute h-full w-full rounded-2xl border bg-green-50 border-green-200 p-6" style="backface-visibility: hidden; transform: rotateY(180deg);">
-                        <div class="flex h-full items-center justify-around text-center"><div class="h-full w-px bg-green-200 absolute left-1/2 top-0 -ml-px"></div><div><p class="text-sm font-medium text-green-600">Mentah</p><p class="mt-1 text-3xl font-bold text-green-800">{{ $totalInRaw }}</p></div><div><p class="text-sm font-medium text-green-600">Jadi</p><p class="mt-1 text-3xl font-bold text-green-800">{{ $totalInFinished }}</p></div></div>
+                        <div class="flex h-full items-center justify-around text-center"><div class="h-full w-px bg-green-200 absolute left-1/2 top-0 -ml-px"></div><div><p class="text-xs font-medium text-green-600">Bahan Mentah</p><p class="mt-1 text-3xl font-bold text-green-800">{{ $totalInRaw }}</p></div><div><p class="text-xs font-medium text-green-600">Barang Jadi</p><p class="mt-1 text-3xl font-bold text-green-800">{{ $totalInFinished }}</p></div></div>
                         <div class="absolute bottom-4 right-4 text-green-300 transition-colors group-hover:text-green-500"><i class="fas fa-sync-alt"></i></div>
                     </div>
                 </div>
@@ -139,7 +138,7 @@
                     </div>
                     <div class="absolute h-full w-full rounded-2xl border bg-yellow-50 border-yellow-200 p-6" style="backface-visibility: hidden; transform: rotateY(180deg);">
                         <div class="flex h-full items-center justify-around text-center">
-                            <div><p class="text-xs font-medium text-yellow-600">Terpakai</p><p class="mt-1 text-2xl font-bold text-yellow-800">{{ $totalOutUsed }}</p></div><div class="h-full w-px bg-yellow-200"></div><div><p class="text-xs font-medium text-yellow-600">Kirim Mentah</p><p class="mt-1 text-2xl font-bold text-yellow-800">{{ $totalOutShippedRaw }}</p></div><div class="h-full w-px bg-yellow-200"></div><div><p class="text-xs font-medium text-yellow-600">Kirim Jadi</p><p class="mt-1 text-2xl font-bold text-yellow-800">{{ $totalOutShippedFinished }}</p></div>
+                            <div><p class="text-xs font-medium text-yellow-600">Bahan Terpakai</p><p class="mt-1 text-2xl font-bold text-yellow-800">{{ $totalOutUsed }}</p></div><div class="h-full w-px bg-yellow-200"></div><div><p class="text-xs font-medium text-yellow-600">Kirim Bahan Mentah</p><p class="mt-1 text-2xl font-bold text-yellow-800">{{ $totalOutShippedRaw }}</p></div><div class="h-full w-px bg-yellow-200"></div><div><p class="text-xs font-medium text-yellow-600">Kirim Barang Jadi</p><p class="mt-1 text-2xl font-bold text-yellow-800">{{ $totalOutShippedFinished }}</p></div>
                         </div>
                         <div class="absolute bottom-4 right-4 text-yellow-300 transition-colors group-hover:text-yellow-500"><i class="fas fa-sync-alt"></i></div>
                     </div>
@@ -152,7 +151,7 @@
                         <div class="absolute bottom-4 right-4 text-red-300 transition-colors group-hover:text-red-500"><i class="fas fa-sync-alt"></i></div>
                     </div>
                     <div class="absolute h-full w-full rounded-2xl border bg-red-50 border-red-200 p-6" style="backface-visibility: hidden; transform: rotateY(180deg);">
-                        <div class="flex h-full items-center justify-around text-center"><div class="h-full w-px bg-red-200 absolute left-1/2 top-0 -ml-px"></div><div><p class="text-sm font-medium text-red-600">Mentah</p><p class="mt-1 text-3xl font-bold text-red-800">{{ $totalDamagedRaw }}</p></div><div><p class="text-sm font-medium text-red-600">Jadi</p><p class="mt-1 text-3xl font-bold text-red-800">{{ $totalDamagedFinished }}</p></div></div>
+                        <div class="flex h-full items-center justify-around text-center"><div class="h-full w-px bg-red-200 absolute left-1/2 top-0 -ml-px"></div><div><p class="text-xs font-medium text-red-600">Bahan Mentah</p><p class="mt-1 text-3xl font-bold text-red-800">{{ $totalDamagedRaw }}</p></div><div><p class="text-xs font-medium text-red-600">Barang Jadi</p><p class="mt-1 text-3xl font-bold text-red-800">{{ $totalDamagedFinished }}</p></div></div>
                         <div class="absolute bottom-4 right-4 text-red-300 transition-colors group-hover:text-red-500"><i class="fas fa-sync-alt"></i></div>
                     </div>
                 </div>

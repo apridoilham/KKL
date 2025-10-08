@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('code')->nullable();
             $table->string('category')->nullable();
             $table->string('name');
+            $table->enum('item_type', ['barang_mentah', 'barang_jadi'])->default('barang_mentah');
             $table->unsignedInteger('quantity')->default(0);
             $table->string('status')->default('available');
             $table->timestamps();

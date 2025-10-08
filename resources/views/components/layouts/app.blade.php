@@ -71,5 +71,37 @@
             </div>
         </div>
     </div>
+
+    @if (session()->has('status'))
+        <div
+            x-data="{
+                show: true,
+                timer: null,
+                init() {
+                    this.timer = setTimeout(() => { this.show = false }, 5000);
+                }
+            }"
+            x-show="show"
+            x-transition:enter-start="opacity-0 translate-x-12"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-end="opacity-0 translate-x-12"
+            @click.away="show = false"
+            class="fixed bottom-5 right-5 w-full max-w-xs z-50"
+            x-cloak
+        >
+            <div class="p-4 rounded-lg shadow-lg border bg-white border-green-500">
+                <div class="flex items-center">
+                    <div class="mr-3">
+                        <i class="fas fa-check-circle fa-lg text-green-500"></i>
+                    </div>
+                    <div class="font-medium text-slate-800">{{ session('status') }}</div>
+                    <button @click="show = false" class="ml-auto -mx-1.5 -my-1.5 p-1.5 rounded-full hover:bg-slate-100">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </body>
 </html>

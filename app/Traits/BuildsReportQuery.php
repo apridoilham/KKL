@@ -14,7 +14,7 @@ trait BuildsReportQuery
             'item' => Item::query(),
             'in' => Transaction::with('item')->whereIn('type', ['masuk_mentah', 'masuk_jadi']),
             'out' => Transaction::with('item')->whereIn('type', ['keluar_terpakai', 'keluar_dikirim', 'keluar_mentah']),
-            'damaged' => Transaction::with('item')->where('type', 'rusak'),
+            'damaged' => Transaction::with('item')->whereIn('type', ['rusak_mentah', 'rusak_jadi']),
             default => Transaction::with('item')->where('type', $filter),
         };
 

@@ -35,7 +35,7 @@ class DummyDataSeeder extends Seeder
 
     private function createUsers(): void
     {
-        User::create(['name' => 'Admin Utama', 'username' => 'admin', 'password' => Hash::make('password'), 'role' => 'admin', 'security_question' => 'Nama hewan?', 'security_answer' => Hash::make('admin'),]);
+        User::create(['name' => 'Staff Gudang', 'username' => 'admin', 'password' => Hash::make('password'), 'role' => 'admin', 'security_question' => 'Nama hewan?', 'security_answer' => Hash::make('admin'),]);
         User::create(['name' => 'Staff Produksi', 'username' => 'produksi', 'password' => Hash::make('password'), 'role' => 'produksi', 'security_question' => 'Warna favorit?', 'security_answer' => Hash::make('produksi'),]);
         User::create(['name' => 'Staff Pengiriman', 'username' => 'pengiriman', 'password' => Hash::make('password'), 'role' => 'pengiriman', 'security_question' => 'Kota kelahiran?', 'security_answer' => Hash::make('pengiriman'),]);
     }

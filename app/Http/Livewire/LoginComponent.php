@@ -60,7 +60,19 @@ class LoginComponent extends Component
             $this->addError('username', 'Username atau password salah.');
             return;
         }
+        
         Auth::login($user, $this->remember);
+
+        $role = Auth::user()->role;
+
+        if ($role === 'admin') {
+            return redirect()->route('home');
+        } elseif ($role === 'produksi') {
+            return redirect('/production');
+        } elseif ($role === 'pengiriman') {
+            return redirect('/transaction');
+        }
+
         return redirect()->route('home');
     }
 

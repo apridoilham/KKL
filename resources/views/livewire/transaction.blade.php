@@ -21,18 +21,21 @@
                 <select wire:model.live="filterType" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
                     <option value="all">Semua Tipe</option>
                     <optgroup label="Barang Masuk">
-                        <option value="masuk_mentah">Masuk (Mentah)</option>
-                        <option value="masuk_jadi">Masuk (Jadi)</option>
+                        <option value="masuk_mentah">Masuk (Bahan Mentah)</option>
+                        <option value="masuk_jadi">Masuk (Barang Jadi)</option>
                     </optgroup>
                     <optgroup label="Barang Keluar">
                         <option value="keluar_terpakai">Keluar (Terpakai)</option>
-                        <option value="keluar_dikirim">Keluar (Dikirim - Jadi)</option>
-                        <option value="keluar_mentah">Keluar (Dikirim - Mentah)</option>
+                        <option value="keluar_mentah">Keluar (Dikirim - Bahan Mentah)</option>
+                        <option value="keluar_dikirim">Keluar (Dikirim - Barang Jadi)</option>
                     </optgroup>
-                    <option value="rusak">Rusak</option>
+                    <optgroup label="Barang Rusak">
+                        <option value="rusak_mentah">Rusak (Bahan Mentah)</option>
+                        <option value="rusak_jadi">Rusak (Barang Jadi)</option>
+                    </optgroup>
                 </select>
             </div>
-             <div>
+            <div>
                 <label class="text-xs font-semibold text-slate-500">Filter Waktu</label>
                 <select wire:model.live="filterDateType" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
                     <option value="all_time">Semua Waktu</option>
@@ -44,13 +47,25 @@
             <div>
                 @if($filterDateType === 'daily')
                     <label class="text-xs font-semibold text-slate-500">Pilih Tanggal</label>
-                    <input wire:model.blur="filterDate" type="date" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                    <input wire:model.live="filterDate" type="date" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
                 @elseif($filterDateType === 'monthly')
-                    <label class="text-xs font-semibold text-slate-500">Pilih Bulan</label>
-                    <input wire:model.blur="filterMonth" type="month" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                    <label class="text-xs font-semibold text-slate-500">Pilih Bulan & Tahun</label>
+                    <div class="flex items-center space-x-2">
+                        <select wire:model.live="filterSelectedMonth" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            @for ($i = 1; $i <= 12; $i++)
+                                <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">{{ date('F', mktime(0, 0, 0, $i, 1)) }}</option>
+                            @endfor
+                        </select>
+                        <select wire:model.live="filterSelectedYear" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            @php $currentYear = date('Y'); @endphp
+                            @for ($year = $currentYear - 5; $year <= $currentYear + 1; $year++)
+                                <option value="{{ $year }}">{{ $year }}</option>
+                            @endfor
+                        </select>
+                    </div>
                 @elseif($filterDateType === 'yearly')
                     <label class="text-xs font-semibold text-slate-500">Masukkan Tahun</label>
-                    <input wire:model.blur="filterYear" type="number" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" placeholder="Tahun...">
+                    <input wire:model.live="filterYear" type="number" class="mt-1 block w-full rounded-lg border border-slate-300 bg-white py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" placeholder="Tahun...">
                 @endif
             </div>
             <div>
@@ -85,12 +100,13 @@
                             <td class="px-6 py-4">
                                 @php
                                     $types = [
-                                        'masuk_mentah' => ['text' => 'Masuk (Mentah)', 'class' => 'bg-green-100 text-green-800'],
-                                        'masuk_jadi' => ['text' => 'Masuk (Jadi)', 'class' => 'bg-sky-100 text-sky-800'],
+                                        'masuk_mentah' => ['text' => 'Masuk (Bahan Mentah)', 'class' => 'bg-green-100 text-green-800'],
+                                        'masuk_jadi' => ['text' => 'Masuk (Barang Jadi)', 'class' => 'bg-sky-100 text-sky-800'],
                                         'keluar_terpakai' => ['text' => 'Keluar (Terpakai)', 'class' => 'bg-orange-100 text-orange-800'],
                                         'keluar_dikirim' => ['text' => 'Keluar (Kirim - Jadi)', 'class' => 'bg-yellow-100 text-yellow-800'],
                                         'keluar_mentah' => ['text' => 'Keluar (Kirim - Mentah)', 'class' => 'bg-yellow-100 text-yellow-800'],
-                                        'rusak' => ['text' => 'Rusak', 'class' => 'bg-red-100 text-red-800'],
+                                        'rusak_mentah' => ['text' => 'Rusak (Bahan Mentah)', 'class' => 'bg-red-100 text-red-800'],
+                                        'rusak_jadi' => ['text' => 'Rusak (Barang Jadi)', 'class' => 'bg-red-100 text-red-800'],
                                     ];
                                     $typeInfo = $types[$transaction->type] ?? ['text' => ucfirst(str_replace('_', ' ', $transaction->type)), 'class' => 'bg-slate-100 text-slate-800'];
                                 @endphp
@@ -145,7 +161,7 @@
     @if ($isModalOpen)
         <div x-data="{ show: @entangle('isModalOpen') }" x-show="show" x-transition.opacity.duration-300ms class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" x-cloak>
             <div x-show="show" x-transition.scale.duration-300ms @click.away="show = false" class="w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
-                <form wire:submit.prevent="store">
+                <form wire:submit.prevent="store" novalidate>
                     <div class="flex items-center justify-between border-b border-slate-200 p-6">
                         <h3 class="flex items-center text-xl font-bold text-slate-800">
                             <i class="fas {{ $id ? 'fa-pencil-alt' : 'fa-plus-circle' }} mr-3 text-slate-400"></i>
@@ -159,14 +175,17 @@
                             <select wire:model.live="type" id="type" class="block w-full appearance-none rounded-lg border border-slate-300 bg-white py-3 px-4 text-slate-800 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" style="background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3e%3cpath stroke=%27%236b7280%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27m6 8 4 4 4-4%27/%3e%3c/svg%3e'); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em;">
                                 <option value="">-- Pilih Tipe --</option>
                                 <optgroup label="Barang Masuk">
-                                    <option value="masuk_mentah">Masuk (Barang Mentah)</option>
+                                    <option value="masuk_mentah">Masuk (Bahan Mentah)</option>
                                     <option value="masuk_jadi">Masuk (Barang Jadi)</option>
                                 </optgroup>
                                 <optgroup label="Barang Keluar">
+                                    <option value="keluar_mentah">Keluar (Dikirim - Bahan Mentah)</option>
                                     <option value="keluar_dikirim">Keluar (Dikirim - Barang Jadi)</option>
-                                    <option value="keluar_mentah">Keluar (Dikirim - Barang Mentah)</option>
                                 </optgroup>
-                                <option value="rusak">Barang Rusak</option>
+                                <optgroup label="Barang Rusak">
+                                    <option value="rusak_mentah">Rusak (Bahan Mentah)</option>
+                                    <option value="rusak_jadi">Rusak (Barang Jadi)</option>
+                                </optgroup>
                             </select>
                             @error('type') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>

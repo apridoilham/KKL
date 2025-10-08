@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -14,10 +16,11 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('username')->unique(); // Mengganti email menjadi username
+            $table->string('username')->unique();
             $table->string('password');
-            $table->string('security_question'); // Menambahkan security_question
-            $table->string('security_answer'); // Menambahkan security_answer
+            $table->string('security_question')->nullable();
+            $table->string('security_answer')->nullable();
+            $table->enum('role', ['admin', 'produksi', 'pengiriman'])->default('produksi');
             $table->rememberToken();
             $table->timestamps();
         });
@@ -36,6 +39,15 @@ return new class extends Migration
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
+
+        User::create([
+            'name' => 'Staff Gudang', 
+            'username' => 'admin', 
+            'password' => Hash::make('password'), 
+            'role' => 'admin', 
+            'security_question' => 'Nama hewan?', 
+            'security_answer' => Hash::make('admin'),
+        ]);
     }
 
     /**

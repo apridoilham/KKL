@@ -28,7 +28,6 @@
         </div>
 
         <script>
-            // Script untuk otomatis memicu dialog print
             document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(function() { window.print(); }, 1000);
             });

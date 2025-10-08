@@ -11,7 +11,15 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('item_id')->constrained('items')->onDelete('restrict');
-            $table->string('type');
+            $table->enum('type', [
+                'masuk_mentah',
+                'masuk_jadi',
+                'keluar_terpakai',
+                'keluar_dikirim',
+                'keluar_mentah',
+                'rusak_mentah',
+                'rusak_jadi'
+            ]);
             $table->unsignedInteger('quantity');
             $table->text('description')->nullable();
             $table->timestamps();
