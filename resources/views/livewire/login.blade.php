@@ -78,40 +78,79 @@
                         <h3 class="flex items-center text-xl font-bold text-slate-800"><i class="fas fa-question-circle mr-3 text-amber-500"></i><span>Lupa Password</span></h3>
                         <button type="button" @click="show = false" class="text-3xl text-slate-400 hover:text-slate-600">&times;</button>
                     </div>
-                    <div class="space-y-4 p-8">
-                        @if (session()->has('dataSession2'))
-                            <div class="rounded-lg p-4 text-sm {{ session('dataSession2')['status'] == 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                {{ session('dataSession2')['message'] }}
-                            </div>
-                        @endif
-                        @if (!$isVerified)
-                            <form wire:submit.prevent="verifyData">
-                                <div class="space-y-6">
-                                    <div class="w-full rounded-lg border border-slate-300 bg-slate-50 p-4">
-                                        <label class="text-xs font-semibold uppercase text-slate-500">Username Anda</label>
-                                        <input wire:model="username" type="text" class="mt-2 block w-full bg-transparent text-lg text-slate-800 focus:outline-none" required>
-                                        @error('username') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
+                    
+                    @if (!$isVerified)
+                        <form wire:submit.prevent="verifyData" novalidate>
+                            <div class="space-y-6 p-8">
+                                @if (session()->has('dataSession2'))
+                                    <div class="rounded-lg p-4 text-sm {{ session('dataSession2')['status'] == 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                        {{ session('dataSession2')['message'] }}
                                     </div>
-                                    @if ($isUserFound)
-                                        <div class="w-full rounded-lg border border-slate-300 bg-slate-50 p-4">
-                                            <label class="text-xs font-semibold uppercase text-slate-500">Pertanyaan: {{ $securityQuestion }}</label>
-                                            <input wire:model="securityAnswer" type="text" class="mt-2 block w-full bg-transparent text-lg text-slate-800 focus:outline-none" placeholder="Masukkan jawaban Anda..." required>
-                                            @error('securityAnswer') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
+                                @endif
+                                <div>
+                                    <label for="modal_username" class="text-sm font-medium text-slate-700">Username Anda</label>
+                                    <div class="relative mt-1">
+                                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <i class="fas fa-user text-slate-400"></i>
                                         </div>
-                                    @endif
+                                        <input wire:model.lazy="username" id="modal_username" type="text" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" placeholder="Masukkan username Anda..." required>
+                                    </div>
+                                    @error('username') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="mt-8 flex justify-end space-x-3 border-t bg-slate-50 p-6 -mx-8 -mb-8">
-                                    <button type="button" @click="show = false" class="rounded-lg border bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100">Batal</button>
-                                    <button type="submit" class="inline-flex items-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
-                                        <span wire:loading.remove wire:target="verifyData">Verifikasi</span>
-                                        <span wire:loading wire:target="verifyData">Memverifikasi...</span>
-                                    </button>
+                                @if ($isUserFound)
+                                    <div>
+                                        <label for="modal_security_answer" class="text-sm font-medium text-slate-700">Pertanyaan: {{ $securityQuestion }}</label>
+                                        <div class="relative mt-1">
+                                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                                <i class="fas fa-key text-slate-400"></i>
+                                            </div>
+                                            <input wire:model="securityAnswer" id="modal_security_answer" type="text" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" placeholder="Masukkan jawaban Anda..." required>
+                                        </div>
+                                        @error('securityAnswer') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="flex justify-end space-x-3 border-t bg-slate-50 p-6">
+                                <button type="button" @click="show = false" class="rounded-lg border bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100">Batal</button>
+                                <button type="submit" class="inline-flex items-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
+                                    <span wire:loading.remove wire:target="verifyData">Verifikasi</span>
+                                    <span wire:loading wire:target="verifyData">Memverifikasi...</span>
+                                </button>
+                            </div>
+                        </form>
+                    @else
+                        <form wire:submit.prevent="changePassword" novalidate>
+                            <div class="space-y-6 p-8">
+                                <p class="text-sm text-slate-600">Verifikasi berhasil. Silakan masukkan password baru Anda.</p>
+                                <div>
+                                    <label for="newPassword" class="text-sm font-medium text-slate-700">Password Baru</label>
+                                    <div class="relative mt-1">
+                                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <i class="fas fa-lock text-slate-400"></i>
+                                        </div>
+                                        <input wire:model="newPassword" id="newPassword" type="password" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" required>
+                                    </div>
+                                    @error('newPassword') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
                                 </div>
-                            </form>
-                        @else
-                           
-                        @endif
-                    </div>
+                                <div>
+                                    <label for="confPass" class="text-sm font-medium text-slate-700">Konfirmasi Password Baru</label>
+                                    <div class="relative mt-1">
+                                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <i class="fas fa-lock text-slate-400"></i>
+                                        </div>
+                                        <input wire:model="confPass" id="confPass" type="password" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" required>
+                                    </div>
+                                    @error('confPass') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-3 border-t bg-slate-50 p-6">
+                                <button type="button" @click="show = false" class="rounded-lg border bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100">Batal</button>
+                                <button type="submit" class="inline-flex items-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
+                                    Ubah Password
+                                </button>
+                            </div>
+                        </form>
+                    @endif
                 </div>
             </div>
         @endif

@@ -170,9 +170,9 @@
                         <button type="button" @click="show = false" class="text-3xl text-slate-400 hover:text-slate-600">&times;</button>
                     </div>
                     <div class="space-y-6 p-8">
-                        <div class="relative">
-                            <label for="type" class="absolute -top-2 left-2 bg-white px-1 text-xs font-semibold text-slate-500">Tipe Transaksi</label>
-                            <select wire:model.live="type" id="type" class="block w-full appearance-none rounded-lg border border-slate-300 bg-white py-3 px-4 text-slate-800 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" style="background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3e%3cpath stroke=%27%236b7280%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27m6 8 4 4 4-4%27/%3e%3c/svg%3e'); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em;">
+                        <div>
+                            <label for="type" class="text-sm font-medium text-slate-700">Tipe Transaksi</label>
+                            <select wire:model.live="type" id="type" class="mt-1 block w-full appearance-none rounded-lg border border-slate-300 bg-white py-2.5 px-3 text-slate-800 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
                                 <option value="">-- Pilih Tipe --</option>
                                 <optgroup label="Barang Masuk">
                                     <option value="masuk_mentah">Masuk (Bahan Mentah)</option>
@@ -187,13 +187,13 @@
                                     <option value="rusak_jadi">Rusak (Barang Jadi)</option>
                                 </optgroup>
                             </select>
-                            @error('type') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            @error('type') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                         </div>
 
                         @if($type)
-                        <div class="relative">
-                            <label for="itemId" class="absolute -top-2 left-2 bg-white px-1 text-xs font-semibold text-slate-500">Barang</label>
-                            <select wire:model="itemId" id="itemId" class="block w-full appearance-none rounded-lg border border-slate-300 bg-white py-3 px-4 text-slate-800 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" style="background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3e%3cpath stroke=%27%236b7280%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27m6 8 4 4 4-4%27/%3e%3c/svg%3e'); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em;">
+                        <div>
+                            <label for="itemId" class="text-sm font-medium text-slate-700">Barang</label>
+                            <select wire:model="itemId" id="itemId" class="mt-1 block w-full appearance-none rounded-lg border border-slate-300 bg-white py-2.5 px-3 text-slate-800 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
                                 <option value="">-- Pilih Barang --</option>
                                 @forelse($items as $item)
                                     <option value="{{ $item->id }}">{{ $item->name }} (Stok: {{ floatval($item->quantity) }})</option>
@@ -201,18 +201,26 @@
                                     <option disabled>Tidak ada barang yang sesuai</option>
                                 @endforelse
                             </select>
-                            @error('itemId') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="grid grid-cols-2 gap-6">
-                            <div>
-                                <label for="quantity" class="text-xs font-semibold uppercase text-slate-500">Kuantitas</label>
-                                <input wire:model="quantity" id="quantity" type="number" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0" min="1">
-                                @error('quantity') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                            </div>
+                            @error('itemId') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                         </div>
                         <div>
-                            <label for="description" class="text-xs font-semibold uppercase text-slate-500">Deskripsi</label>
-                            <input wire:model="description" id="description" type="text" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0" placeholder="Catatan (opsional)...">
+                            <label for="quantity" class="text-sm font-medium text-slate-700">Kuantitas</label>
+                            <div class="relative mt-1">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-hashtag text-slate-400"></i>
+                                </div>
+                                <input wire:model="quantity" id="quantity" type="number" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" min="1" required>
+                            </div>
+                            @error('quantity')<span class="text-xs text-red-500 mt-1">{{$message}}</span>@enderror
+                        </div>
+                        <div>
+                            <label for="description" class="text-sm font-medium text-slate-700">Deskripsi</label>
+                             <div class="relative mt-1">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-pencil-alt text-slate-400"></i>
+                                </div>
+                                <input wire:model="description" id="description" type="text" placeholder="Catatan (opsional)..." class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
                         </div>
                         @endif
                     </div>

@@ -80,12 +80,20 @@ class LoginComponent extends Component
     {
         $this->validate(['username' => 'required|string']);
         $user = User::where('username', $this->username)->first();
+
         if (!$user) {
             session()->flash('dataSession2', ['status' => 'failed', 'message' => 'Username tidak ditemukan.']);
             return;
         }
+
+        if (empty($user->security_question) || empty($user->security_answer)) {
+            session()->flash('dataSession2', ['status' => 'failed', 'message' => 'Akun ini tidak memiliki pengaturan pertanyaan keamanan. Harap hubungi administrator.']);
+            return;
+        }
+        
         $this->isUserFound = true;
         $this->securityQuestion = $user->security_question;
+
         if ($this->isUserFound && $this->securityAnswer) {
             if (Hash::check($this->securityAnswer, $user->security_answer)) {
                 $this->isVerified = true;

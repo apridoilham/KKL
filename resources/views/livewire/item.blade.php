@@ -92,15 +92,40 @@
     @if ($isModalOpen)
         <div x-data="{ show: @entangle('isModalOpen') }" x-show="show" x-transition.opacity.duration-300ms class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" x-cloak>
             <div x-show="show" x-transition.scale.duration-300ms @click.away="show = false" class="w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
-                <form wire:submit.prevent="store">
+                <form wire:submit.prevent="store" novalidate>
                     <div class="flex items-center justify-between border-b border-slate-200 p-6">
                         <h3 class="flex items-center text-xl font-bold text-slate-800"><i class="fas {{ $id ? 'fa-pencil-alt' : 'fa-plus-circle' }} mr-3 text-slate-400"></i><span>{{ $id ? 'Ubah' : 'Tambah' }} {{ $item_type == 'barang_jadi' ? 'Barang Jadi' : 'Bahan Mentah' }}</span></h3>
                         <button type="button" @click="show = false" class="text-3xl text-slate-400 hover:text-slate-600">&times;</button>
                     </div>
                     <div class="space-y-6 p-8">
-                        <div><label for="name" class="text-xs font-semibold uppercase text-slate-500">Nama Item <span class="text-red-500">*</span></label><input wire:model="name" type="text" id="name" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0" required>@error('name') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror</div>
-                        <div><label for="category" class="text-xs font-semibold uppercase text-slate-500">Kategori</label><input wire:model="category" type="text" id="category" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0"></div>
-                        <div><label for="code" class="text-xs font-semibold uppercase text-slate-500">Kode Item</label><input wire:model="code" type="text" id="code" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0"></div>
+                        <div>
+                            <label for="name" class="text-sm font-medium text-slate-700">Nama Item <span class="text-red-500">*</span></label>
+                            <div class="relative mt-1">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-tag text-slate-400"></i>
+                                </div>
+                                <input wire:model="name" id="name" type="text" placeholder="cth: Tepung Terigu" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" required>
+                            </div>
+                            @error('name') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label for="category" class="text-sm font-medium text-slate-700">Kategori</label>
+                            <div class="relative mt-1">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-bookmark text-slate-400"></i>
+                                </div>
+                                <input wire:model="category" type="text" id="category" placeholder="cth: Bahan Kue" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="code" class="text-sm font-medium text-slate-700">Kode Item</label>
+                             <div class="relative mt-1">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-barcode text-slate-400"></i>
+                                </div>
+                                <input wire:model="code" type="text" id="code" placeholder="cth: TPG-001" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
+                        </div>
                     </div>
                     <div class="flex justify-end space-x-3 rounded-b-xl border-t border-slate-200 bg-slate-50 p-6">
                         <button type="button" @click="show = false" class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100">Batal</button>

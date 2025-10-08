@@ -6,7 +6,7 @@
             <p class="mt-1 text-slate-500">Tambah, ubah, atau hapus data pengguna sistem.</p>
         </div>
         <div class="mt-4 md:mt-0">
-             <button wire:click="create" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800">
+            <button wire:click="create" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800">
                 <i class="fas fa-plus mr-2"></i>
                 Tambah Pengguna
             </button>
@@ -79,7 +79,7 @@
                                 </svg>
                                 <h3 class="mt-2 text-lg font-semibold text-slate-800">Pengguna Tidak Ditemukan</h3>
                                 <p class="mt-1 text-sm text-slate-500">Tidak ada data yang cocok dengan filter atau pencarian Anda.</p>
-                             </td>
+                               </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -92,45 +92,87 @@
     @if ($isModalOpen)
         <div x-data="{ show: @entangle('isModalOpen') }" x-show="show" x-transition.opacity.duration-300ms class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" x-cloak>
             <div x-show="show" x-transition.scale.duration-300ms @click.away="show = false" class="w-full max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
-                <form wire:submit.prevent="store">
+                <form wire:submit.prevent="store" novalidate>
                     <div class="flex items-center justify-between border-b border-slate-200 p-6">
                         <h3 class="flex items-center text-xl font-bold text-slate-800"><i class="fas {{ $isEditMode ? 'fa-user-edit' : 'fa-user-plus' }} mr-3 text-slate-400"></i><span>{{ $isEditMode ? 'Ubah Pengguna' : 'Tambah Pengguna Baru' }}</span></h3>
                         <button type="button" @click="show = false" class="text-3xl text-slate-400 hover:text-slate-600">&times;</button>
                     </div>
                     <div class="space-y-6 p-8">
                         <div>
-                            <label for="name" class="text-xs font-semibold uppercase text-slate-500">Nama Lengkap <span class="text-red-500">*</span></label>
-                            <input wire:model="name" type="text" id="name" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0" required>
-                            @error('name')<span class="text-red-500 text-xs">{{$message}}</span>@enderror
+                            <label for="name" class="text-sm font-medium text-slate-700">Nama Lengkap <span class="text-red-500">*</span></label>
+                            <div class="relative mt-1">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-user text-slate-400"></i>
+                                </div>
+                                <input wire:model="name" id="name" type="text" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" placeholder="Masukkan nama lengkap..." required>
+                            </div>
+                            @error('name')<span class="text-xs text-red-500 mt-1">{{$message}}</span>@enderror
                         </div>
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
-                                <label for="username" class="text-xs font-semibold uppercase text-slate-500">Username <span class="text-red-500">*</span></label>
-                                <input wire:model="username" type="text" id="username" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0" required>
-                                @error('username')<span class="text-red-500 text-xs">{{$message}}</span>@enderror
+                                <label for="username" class="text-sm font-medium text-slate-700">Username <span class="text-red-500">*</span></label>
+                                <div class="relative mt-1">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <i class="fas fa-at text-slate-400"></i>
+                                    </div>
+                                    <input wire:model="username" id="username" type="text" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" placeholder="Masukkan username..." required>
+                                </div>
+                                @error('username')<span class="text-xs text-red-500 mt-1">{{$message}}</span>@enderror
                             </div>
-                            <div class="relative">
-                                <label for="role" class="absolute -top-2 left-0 text-xs font-semibold uppercase text-slate-500">Peran (Role) <span class="text-red-500">*</span></label>
-                                <select wire:model="role" id="role" class="mt-1 block w-full appearance-none border-0 border-b-2 border-slate-200 bg-transparent px-0 pt-4 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0" style="background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3e%3cpath stroke=%27%236b7280%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27m6 8 4 4 4-4%27/%3e%3c/svg%3e'); background-position: right 0 center; background-repeat: no-repeat; background-size: 1.5em 1.5em;" required>
+                            <div>
+                                <label for="role" class="text-sm font-medium text-slate-700">Peran (Role) <span class="text-red-500">*</span></label>
+                                <select wire:model="role" id="role" class="mt-1 block w-full appearance-none rounded-lg border border-slate-300 bg-white py-2.5 px-3 text-slate-800 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" required>
                                     <option value="">-- Pilih Peran --</option>
                                     <option value="admin">Admin</option>
                                     <option value="produksi">Staff Produksi</option>
                                     <option value="pengiriman">Staff Pengiriman</option>
                                 </select>
-                                @error('role')<span class="text-red-500 text-xs">{{$message}}</span>@enderror
+                                @error('role')<span class="text-xs text-red-500 mt-1">{{$message}}</span>@enderror
                             </div>
                         </div>
                         <hr class="border-slate-200"/>
-                        <p class="text-sm text-slate-500 -mb-2">{{ $isEditMode ? 'Kosongkan jika tidak ingin mengubah password.' : 'Password untuk pengguna baru.' }}</p>
+                        <p class="text-sm text-slate-500 -my-2">Pertanyaan keamanan untuk fitur Lupa Password (opsional).</p>
+                        <div>
+                            <label for="security_question" class="text-sm font-medium text-slate-700">Pertanyaan Keamanan</label>
+                            <div class="relative mt-1">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-question-circle text-slate-400"></i>
+                                </div>
+                                <input wire:model="security_question" type="text" id="security_question" placeholder="cth: Siapa nama hewan peliharaan Anda?" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
+                            @error('security_question')<span class="text-xs text-red-500 mt-1">{{$message}}</span>@enderror
+                        </div>
+                        <div>
+                            <label for="security_answer" class="text-sm font-medium text-slate-700">Jawaban Keamanan</label>
+                            <div class="relative mt-1">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-key text-slate-400"></i>
+                                </div>
+                                <input wire:model="security_answer" type="text" id="security_answer" placeholder="Jawaban (case-sensitive)" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
+                            @error('security_answer')<span class="text-xs text-red-500 mt-1">{{$message}}</span>@enderror
+                        </div>
+                        <hr class="border-slate-200"/>
+                        <p class="text-sm text-slate-500 -my-2">{{ $isEditMode ? 'Kosongkan jika tidak ingin mengubah password.' : 'Password untuk pengguna baru.' }}</p>
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                              <div>
-                                <label for="password" class="text-xs font-semibold uppercase text-slate-500">Password @if(!$isEditMode)<span class="text-red-500">*</span>@endif</label>
-                                <input wire:model="password" type="password" id="password" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0">
-                                @error('password')<span class="text-red-500 text-xs">{{$message}}</span>@enderror
+                                <label for="password" class="text-sm font-medium text-slate-700">Password @if(!$isEditMode)<span class="text-red-500">*</span>@endif</label>
+                                <div class="relative mt-1">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <i class="fas fa-lock text-slate-400"></i>
+                                    </div>
+                                    <input wire:model="password" id="password" type="password" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                </div>
+                                @error('password')<span class="text-xs text-red-500 mt-1">{{$message}}</span>@enderror
                             </div>
                              <div>
-                                <label for="password_confirmation" class="text-xs font-semibold uppercase text-slate-500">Konfirmasi Password @if(!$isEditMode)<span class="text-red-500">*</span>@endif</label>
-                                <input wire:model="password_confirmation" type="password" id="password_confirmation" class="mt-1 block w-full border-0 border-b-2 border-slate-200 bg-transparent p-0 pb-2 text-slate-800 focus:border-amber-500 focus:ring-0">
+                                <label for="password_confirmation" class="text-sm font-medium text-slate-700">Konfirmasi Password @if(!$isEditMode)<span class="text-red-500">*</span>@endif</label>
+                                <div class="relative mt-1">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <i class="fas fa-lock text-slate-400"></i>
+                                    </div>
+                                    <input wire:model="password_confirmation" id="password_confirmation" type="password" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                </div>
                             </div>
                         </div>
                     </div>

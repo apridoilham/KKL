@@ -12,11 +12,6 @@ use Illuminate\Support\Str;
 class UserFactory extends Factory
 {
     /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
-
-    /**
      * Define the model's default state.
      *
      * @return array<string, mixed>
@@ -26,9 +21,8 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'username' => fake()->unique()->userName(),
-            'password' => static::$password ??= Hash::make('password'),
-            'security_question' => 'What is your favorite color?',
-            'security_answer' => Hash::make('blue'),
+            'password' => Hash::make('password'),
+            'role' => fake()->randomElement(['produksi', 'pengiriman']),
             'remember_token' => Str::random(10),
         ];
     }

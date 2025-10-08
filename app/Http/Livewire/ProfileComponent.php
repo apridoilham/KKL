@@ -18,12 +18,19 @@ class ProfileComponent extends Component
     // Properti untuk ubah data
     public string $confirmation_password = '';
 
+    // Properti untuk ubah pertanyaan keamanan
+    public ?string $security_question = null;
+    public ?string $security_answer = null;
+    public string $security_confirmation_password = '';
+
+
     public function mount(): void
     {
         $this->data = ['title' => 'Edit Profil', 'urlPath' => 'profile'];
         $user = auth()->user();
         $this->name = $user->name;
         $this->username = $user->username;
+        $this->security_question = $user->security_question;
     }
 
     public function changePassword(): void
@@ -71,6 +78,31 @@ class ProfileComponent extends Component
         $this->dispatch('toast', status: 'success', message: 'Data diri berhasil diperbarui.');
         $this->reset('confirmation_password');
     }
+
+    public function changeSecurity(): void
+    {
+        $this->validate([
+            'security_question' => 'required|string|max:255',
+            'security_answer' => 'required|string|max:255',
+            'security_confirmation_password' => 'required|string',
+        ]);
+
+        $user = auth()->user();
+
+        if (!Hash::check($this->security_confirmation_password, $user->password)) {
+            $this->addError('security_confirmation_password', 'Password konfirmasi yang Anda masukkan salah.');
+            return;
+        }
+
+        $user->update([
+            'security_question' => $this->security_question,
+            'security_answer' => Hash::make($this->security_answer),
+        ]);
+
+        $this->dispatch('toast', status: 'success', message: 'Pertanyaan keamanan berhasil diperbarui.');
+        $this->reset('security_answer', 'security_confirmation_password');
+    }
+
 
     public function render()
     {

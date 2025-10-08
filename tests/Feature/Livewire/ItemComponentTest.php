@@ -7,72 +7,84 @@ use App\Models\Item;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ItemComponentTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function an_admin_can_see_the_item_management_page()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-        $this->actingAs($admin);
+    protected User $admin;
+    protected User $staff;
 
-        $this->get('/item')->assertSeeLivewire('item-component');
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Cari user admin yang dibuat oleh migrasi. Ini cara yang paling benar.
+        $this->admin = User::where('username', 'admin')->firstOrFail();
+        $this->staff = User::factory()->create(['role' => 'produksi']);
     }
 
-    /** @test */
-    public function an_admin_can_create_a_new_item()
+    #[Test]
+    public function an_admin_can_create_a_new_item(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
-        $this->actingAs($admin);
-
-        Livewire::test(ItemComponent::class)
+        Livewire::actingAs($this->admin)
+            ->test(ItemComponent::class)
+            ->call('create')
             ->set('name', 'Laptop Baru')
             ->set('category', 'Elektronik')
             ->set('code', 'LP-001')
+            ->set('item_type', 'barang_jadi')
             ->call('store');
 
-        $this->assertTrue(Item::where('name', 'Laptop Baru')->exists());
+        $this->assertDatabaseHas('items', ['name' => 'Laptop Baru', 'code' => 'LP-001']);
+    }
+    
+    #[Test]
+    public function an_admin_can_update_an_item(): void
+    {
+        $item = Item::factory()->create(['name' => 'Nama Lama']);
+
+        Livewire::actingAs($this->admin)
+            ->test(ItemComponent::class)
+            ->call('edit', $item->id)
+            ->set('name', 'Nama Baru Diedit')
+            ->call('store');
+
+        $this->assertDatabaseHas('items', ['id' => $item->id, 'name' => 'Nama Baru Diedit']);
     }
 
-    /** @test */
-    public function item_name_is_required()
+    #[Test]
+    public function item_name_is_required(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
-        $this->actingAs($admin);
-
-        Livewire::test(ItemComponent::class)
+        Livewire::actingAs($this->admin)
+            ->test(ItemComponent::class)
             ->set('name', '')
             ->call('store')
             ->assertHasErrors(['name' => 'required']);
     }
 
-    /** @test */
-    public function an_admin_can_delete_an_item()
+    #[Test]
+    public function an_admin_can_delete_an_item(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
-        $this->actingAs($admin);
-
         $item = Item::factory()->create();
 
-        Livewire::test(ItemComponent::class)
+        Livewire::actingAs($this->admin)
+            ->test(ItemComponent::class)
             ->call('delete', $item->id);
 
         $this->assertDatabaseMissing('items', ['id' => $item->id]);
     }
 
-    /** @test */
-    public function a_non_admin_cannot_delete_an_item()
+    #[Test]
+    public function a_non_admin_cannot_access_item_management_features(): void
     {
-        $staff = User::factory()->create(['role' => 'produksi']);
-        $this->actingAs($staff);
-
         $item = Item::factory()->create();
 
-        Livewire::test(ItemComponent::class)
-            ->call('delete', $item->id);
+        Livewire::actingAs($this->staff)
+            ->test(ItemComponent::class)
+            ->call('delete', $item->id)
+            ->assertForbidden();
 
         $this->assertDatabaseHas('items', ['id' => $item->id]);
     }

@@ -19,6 +19,7 @@ class UserComponent extends Component
     public ?int $userId = null;
     public string $name = '', $username = '', $role = '';
     public ?string $password = null, $password_confirmation = null;
+    public ?string $security_question = null, $security_answer = null;
     public bool $isModalOpen = false;
     public bool $isEditMode = false;
 
@@ -30,7 +31,11 @@ class UserComponent extends Component
             'name' => 'required|string|max:255',
             'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($this->userId)],
             'role' => 'required|in:admin,produksi,pengiriman',
+            'security_question' => 'nullable|string|max:255',
         ];
+        
+        $rules['security_answer'] = $this->security_question ? 'required|string|max:255' : 'nullable|string|max:255';
+        
         if (!$this->isEditMode) {
             $rules['password'] = 'required|string|min:6|confirmed';
         } else {
@@ -54,7 +59,7 @@ class UserComponent extends Component
 
     public function resetInputFields(): void
     {
-        $this->reset(['userId', 'name', 'username', 'role', 'password', 'password_confirmation', 'isModalOpen', 'isEditMode']);
+        $this->reset(['userId', 'name', 'username', 'role', 'password', 'password_confirmation', 'security_question', 'security_answer', 'isModalOpen', 'isEditMode']);
     }
 
     public function create(): void
@@ -72,6 +77,8 @@ class UserComponent extends Component
         $this->name = $user->name;
         $this->username = $user->username;
         $this->role = $user->role;
+        $this->security_question = $user->security_question;
+        $this->security_answer = null; 
         $this->isEditMode = true;
         $this->isModalOpen = true;
     }
@@ -86,9 +93,20 @@ class UserComponent extends Component
             'username' => $this->username,
             'role' => $this->role,
         ];
+
         if (!empty($this->password)) {
             $userData['password'] = Hash::make($this->password);
         }
+
+        if (!empty($this->security_question) && !empty($this->security_answer)) {
+            $userData['security_question'] = $this->security_question;
+            $userData['security_answer'] = Hash::make($this->security_answer);
+        } elseif ($this->isEditMode && empty($this->security_question)) {
+            // Jika pertanyaan keamanan dikosongkan saat edit, hapus juga jawabannya
+            $userData['security_question'] = null;
+            $userData['security_answer'] = null;
+        }
+
         User::updateOrCreate(['id' => $this->userId], $userData);
 
         $this->dispatch(

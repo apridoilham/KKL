@@ -48,6 +48,35 @@
                     </div>
                 </form>
             </div>
+            
+            <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+                <form wire:submit.prevent="changeSecurity">
+                    <div class="border-b border-slate-200 p-6">
+                        <h3 class="text-lg font-semibold text-slate-800">Ubah Pertanyaan Keamanan</h3>
+                    </div>
+                    <div class="space-y-6 p-6">
+                        <div>
+                            <label for="security_question" class="text-sm font-medium text-slate-700">Pertanyaan Keamanan Baru</label>
+                            <input wire:model="security_question" id="security_question" type="text" placeholder="cth: Siapa nama ibu kandung Anda?" class="mt-1 block w-full rounded-lg border border-slate-300 py-2 px-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500" required>
+                            @error('security_question') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label for="security_answer" class="text-sm font-medium text-slate-700">Jawaban Keamanan Baru</label>
+                            <input wire:model="security_answer" id="security_answer" type="text" placeholder="Jawaban (case-sensitive)" class="mt-1 block w-full rounded-lg border border-slate-300 py-2 px-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500" required>
+                            @error('security_answer') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                        </div>
+                        <hr>
+                        <div>
+                            <label for="security_confirmation_password" class="text-sm font-medium text-slate-700">Konfirmasi dengan Password Anda</label>
+                            <input wire:model="security_confirmation_password" id="security_confirmation_password" type="password" class="mt-1 block w-full rounded-lg border border-slate-300 py-2 px-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500" required>
+                            @error('security_confirmation_password') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+                    <div class="flex justify-end rounded-b-xl border-t border-slate-200 bg-slate-50 p-6">
+                        <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Simpan Pertanyaan</button>
+                    </div>
+                </form>
+            </div>
 
             <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
                 <form wire:submit.prevent="changePassword">
