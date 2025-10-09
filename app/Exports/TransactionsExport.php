@@ -5,10 +5,8 @@ namespace App\Exports;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Events\BeforeSheet;
 
-class TransactionsExport implements FromCollection, WithHeadings, WithMapping, WithEvents
+class TransactionsExport implements FromCollection, WithHeadings, WithMapping
 {
     protected $data;
     private $rowNumber = 0;
@@ -47,15 +45,6 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping, W
             $transaction->quantity,
             $transaction->description,
             $transaction->created_at->format('Y-m-d H:i:s'),
-        ];
-    }
-
-    public function registerEvents(): array
-    {
-        return [
-            BeforeSheet::class => function(BeforeSheet $event) {
-                $this->rowNumber = 0; // Reset nomor baris sebelum sheet dibuat
-            },
         ];
     }
 }

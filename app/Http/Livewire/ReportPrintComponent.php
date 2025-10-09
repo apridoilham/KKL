@@ -21,8 +21,9 @@ class ReportPrintComponent extends Component
         $this->data = ['title' => 'Cetak Laporan', 'urlPath' => 'report'];
         $requestData = request()->query();
         $validator = Validator::make($requestData, [
-            'filter' => 'required|in:item,in,out,damaged,masuk_mentah,masuk_jadi,keluar_terpakai,keluar_dikirim,keluar_mentah,rusak',
+            'filter' => 'required|in:item,in,out,damaged',
             'filterBy' => 'required|in:date,month,year',
+            'itemType' => 'required|in:all,barang_mentah,barang_jadi',
             'dateFrom' => 'required_if:filterBy,date|date',
             'dateUntil' => 'required_if:filterBy,date|date',
             'monthFrom' => 'required_if:filterBy,month|integer',

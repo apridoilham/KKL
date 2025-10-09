@@ -8,7 +8,6 @@ use App\Traits\BuildsReportQuery;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Routing\Controller;
 
 class ReportDownloadController extends Controller
 {
@@ -17,8 +16,9 @@ class ReportDownloadController extends Controller
     public function download(Request $request, string $type)
     {
         $validated = $request->validate([
-            'filter' => 'required|in:item,in,out,damaged,pembelian_masuk,produksi_masuk,produksi_keluar,pengiriman_keluar,rusak',
+            'filter' => 'required|in:item,in,out,damaged',
             'filterBy' => 'required|in:date,month,year',
+            'itemType' => 'required|in:all,barang_mentah,barang_jadi',
             'dateFrom' => 'nullable|date',
             'dateUntil' => 'nullable|date',
             'monthFrom' => 'nullable|integer',

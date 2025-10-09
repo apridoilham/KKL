@@ -3,6 +3,7 @@
 namespace App\Http\Livewire;
 
 use App\Models\Item;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -77,11 +78,12 @@ class ItemComponent extends Component
         }
 
         Item::updateOrCreate(['id' => $this->id], $dataToSave);
+        Cache::flush();
 
         $this->dispatch(
             'toast',
             status: 'success',
-            message: $this->id ? 'Bahan berhasil diperbarui.' : 'Bahan baru berhasil dibuat.'
+            message: $this->id ? 'Item berhasil diperbarui.' : 'Item baru berhasil dibuat.'
         );
         $this->isModalOpen = false;
         $this->resetInputFields();
@@ -104,16 +106,17 @@ class ItemComponent extends Component
         Gate::authorize('manage-items');
         try {
             Item::findOrFail($id)->delete();
+            Cache::flush();
             $this->dispatch('toast', status: 'success', message: 'Data berhasil dihapus.');
         } catch (\Exception $e) {
-            $this->dispatch('toast', status: 'failed', message: 'Gagal! Bahan terhubung dengan transaksi.');
+            $this->dispatch('toast', status: 'failed', message: 'Gagal! Item terhubung dengan transaksi.');
         }
     }
 
     public function render()
     {
         $itemsQuery = Item::query()
-            ->where(fn($query) => $query->where('code', 'like', '%' . $this->search . '%')
+            ->where(fn ($query) => $query->where('code', 'like', '%' . $this->search . '%')
                 ->orWhere('category', 'like', '%' . $this->search . '%')
                 ->orWhere('name', 'like', '%' . $this->search . '%'));
 

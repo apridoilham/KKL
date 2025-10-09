@@ -5,6 +5,7 @@ namespace App\Http\Livewire;
 use App\Models\Item;
 use App\Models\Transaction;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
@@ -172,7 +173,6 @@ class TransactionComponent extends Component
                         'quantity' => $this->quantity,
                         'description' => $this->description,
                     ]);
-
                 } else {
                     $item = Item::findOrFail($this->itemId);
                     if (in_array($this->type, $stockInTypes)) {
@@ -189,6 +189,7 @@ class TransactionComponent extends Component
                 }
             });
 
+            Cache::flush();
             $this->dispatch('toast', status: 'success', message: $this->id ? 'Transaksi berhasil diperbarui.' : 'Transaksi berhasil dibuat.');
             $this->isModalOpen = false;
             $this->resetInputFields();
@@ -227,6 +228,7 @@ class TransactionComponent extends Component
                 $transaction->delete();
             });
 
+            Cache::flush();
             $this->dispatch('toast', status: 'success', message: 'Transaksi dihapus, stok dikembalikan.');
         } catch (\Exception $e) {
             $this->dispatch('toast', status: 'failed', message: $e->getMessage());
@@ -252,12 +254,8 @@ class TransactionComponent extends Component
                     $transactionsQuery->whereDate('created_at', $this->filterDate);
                     break;
                 case 'monthly':
-                    try {
-                        $date = Carbon::parse($this->filterMonth);
-                        $transactionsQuery->whereYear('created_at', $date->year)->whereMonth('created_at', $date->month);
-                    } catch (\Exception $e) {
-
-                    }
+                    $date = Carbon::parse($this->filterMonth);
+                    $transactionsQuery->whereYear('created_at', $date->year)->whereMonth('created_at', $date->month);
                     break;
                 case 'yearly':
                     $transactionsQuery->whereYear('created_at', $this->filterYear);

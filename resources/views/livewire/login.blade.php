@@ -2,9 +2,9 @@
     @section('title', $data['title'] ?? 'Login')
     <div class="antialiased font-sans">
         <div class="min-h-screen flex items-center justify-center bg-slate-100 p-6">
-            
+
             <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-2xl md:p-12">
-                
+
                 <div class="mb-12 text-center">
                     <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 border-2 border-amber-200">
                         <svg class="h-8 w-8 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -15,11 +15,23 @@
                         {{ $checkData > 0 ? 'Selamat Datang' : 'Administrator Setup' }}
                     </h1>
                     <p class="mt-2 text-sm text-slate-500">
-                        Masuk untuk mengakses panel kontrol inventaris.
+                        {{ $checkData > 0 ? 'Masuk untuk mengakses panel kontrol inventaris.' : 'Buat akun admin pertama untuk memulai.' }}
                     </p>
                 </div>
 
                 <form class="space-y-7" wire:submit.prevent='submit'>
+                    @if($checkData == 0)
+                        <div>
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                    <i class="fas fa-id-card fa-fw"></i>
+                                </div>
+                                <input wire:model.blur='name' type="text" class="w-full rounded-lg border border-slate-300 bg-slate-50 py-3 pl-12 pr-4 text-slate-900 placeholder-slate-400 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Nama Lengkap" required>
+                            </div>
+                            @error('name') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
+                        </div>
+                    @endif
+
                     <div>
                         <div class="relative">
                             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
@@ -29,7 +41,7 @@
                         </div>
                         @error('username') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
                     </div>
-                    
+
                     <div x-data="{ show: false }">
                         <div class="relative">
                             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
@@ -45,6 +57,27 @@
                         @error('password') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
                     </div>
 
+                    @if($checkData == 0)
+                        <div>
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                    <i class="fas fa-question-circle fa-fw"></i>
+                                </div>
+                                <input wire:model.blur='securityQuestion' type="text" class="w-full rounded-lg border border-slate-300 bg-slate-50 py-3 pl-12 pr-4 text-slate-900 placeholder-slate-400 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Pertanyaan Keamanan" required>
+                            </div>
+                             @error('securityQuestion') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                    <i class="fas fa-key fa-fw"></i>
+                                </div>
+                                <input wire:model.blur='securityAnswer' type="text" class="w-full rounded-lg border border-slate-300 bg-slate-50 py-3 pl-12 pr-4 text-slate-900 placeholder-slate-400 transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Jawaban Keamanan" required>
+                            </div>
+                             @error('securityAnswer') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
+                        </div>
+                    @endif
+
                     @if ($checkData > 0)
                         <div class="flex items-center justify-between text-sm">
                             <div class="flex items-center">
@@ -54,7 +87,7 @@
                             <a href="#" wire:click.prevent="$set('isModalOpen', true)" class="font-medium text-amber-600 hover:text-amber-500">Lupa password?</a>
                         </div>
                     @endif
-                    
+
                     @if (session()->has('dataSession'))
                         <div class="text-center text-sm {{ session('dataSession')['status'] == 'success' ? 'text-green-600' : 'text-red-600' }}">
                             {{ session('dataSession')['message'] }}
@@ -70,7 +103,7 @@
                 </form>
             </div>
         </div>
-        
+
         @if ($isModalOpen)
             <div x-data="{ show: @entangle('isModalOpen') }" x-show="show" x-transition.opacity.duration-300ms class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" x-cloak>
                 <div x-show="show" x-transition.scale.duration-300ms @click.away="show = false" class="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl border">
@@ -78,7 +111,7 @@
                         <h3 class="flex items-center text-xl font-bold text-slate-800"><i class="fas fa-question-circle mr-3 text-amber-500"></i><span>Lupa Password</span></h3>
                         <button type="button" @click="show = false" class="text-3xl text-slate-400 hover:text-slate-600">&times;</button>
                     </div>
-                    
+
                     @if (!$isVerified)
                         <form wire:submit.prevent="verifyData" novalidate>
                             <div class="space-y-6 p-8">

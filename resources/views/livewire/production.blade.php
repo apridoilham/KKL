@@ -6,7 +6,7 @@
         </div>
 
         <div class="w-full space-y-8">
-            
+
             <div class="rounded-xl border border-slate-200 bg-white">
                 <div class="border-b border-slate-200 p-6">
                     <h3 class="text-lg font-semibold text-slate-800">Langkah 1: Pilih Barang Jadi</h3>
@@ -40,7 +40,7 @@
                                     @foreach($bom as $material)
                                         <li class="flex items-center justify-between rounded-lg bg-slate-50 p-3 border border-slate-200">
                                             <span class="text-slate-700">{{ $material->name }}</span>
-                                            
+
                                             @if($editingBomItemId === $material->id)
                                                 <div class="flex items-center space-x-2">
                                                     <input wire:model="editingBomItemQuantity" wire:keydown.enter="saveBomItem({{ $material->id }})" type="number" step="1" class="block w-24 rounded-md border-slate-300 py-1 px-2 text-slate-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
@@ -93,7 +93,7 @@
                                 <form wire:submit.prevent="produce">
                                     <div class="mb-6">
                                         <label for="quantity" class="text-sm font-medium text-slate-700">Jumlah yang Akan Diproduksi</label>
-                                        <input wire:model.live="quantityToProduce" type="number" min="1" step="1" id="quantity" class="mt-1 block w-full rounded-lg border border-slate-300 py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                        <input wire:model.live.debounce.300ms="quantityToProduce" type="number" step="1" id="quantity" @wheel.prevent class="mt-1 block w-full rounded-lg border border-slate-300 py-2 px-3 text-slate-700 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
                                     </div>
 
                                     <div class="space-y-4 mb-6">
@@ -120,7 +120,7 @@
                                             </div>
                                         @endforeach
                                     </div>
-                                    
+
                                     @if(!$canProduce)
                                         <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50" role="alert">
                                             <span class="font-medium">Peringatan!</span> Stok bahan mentah tidak mencukupi.

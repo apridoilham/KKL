@@ -60,7 +60,7 @@ class LoginComponent extends Component
             $this->addError('username', 'Username atau password salah.');
             return;
         }
-        
+
         Auth::login($user, $this->remember);
 
         $role = Auth::user()->role;
@@ -72,8 +72,6 @@ class LoginComponent extends Component
         } elseif ($role === 'pengiriman') {
             return redirect('/transaction');
         }
-
-        return redirect()->route('home');
     }
 
     public function verifyData()
@@ -90,7 +88,7 @@ class LoginComponent extends Component
             session()->flash('dataSession2', ['status' => 'failed', 'message' => 'Akun ini tidak memiliki pengaturan pertanyaan keamanan. Harap hubungi administrator.']);
             return;
         }
-        
+
         $this->isUserFound = true;
         $this->securityQuestion = $user->security_question;
 

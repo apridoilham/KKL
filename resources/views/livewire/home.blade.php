@@ -85,7 +85,7 @@
     </div>
     
     <div class="relative">
-        <div wire:loading.flex wire:target="loadDashboardData, resetFilters, applyDashboardFilter" class="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm">
+        <div wire:loading.flex wire:target="updateStatistics, resetFilters, applyDashboardFilter" class="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm">
             <i class="fas fa-spinner fa-spin text-amber-500 text-3xl"></i>
         </div>
 
@@ -115,8 +115,23 @@
                     </div>
                 </div>
             </div>
-            <div class="rounded-2xl border border-slate-200 bg-white p-6">
-                <p class="text-sm font-medium text-slate-500">Total Pengguna</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalUsers }}</p>
+            <div class="group h-[116px]" style="perspective: 1000px">
+                <div x-data="{ flipped: false }" @click="flipped = !flipped" class="relative h-full w-full cursor-pointer transition-transform duration-500" style="transform-style: preserve-3d;" :class="{ '[transform:rotateY(180deg)]': flipped }">
+                    <div class="absolute h-full w-full rounded-2xl border border-slate-200 bg-white p-6" style="backface-visibility: hidden;">
+                        <p class="text-sm font-medium text-slate-500">Total Pengguna</p><p class="mt-1 text-3xl font-bold text-slate-900">{{ $totalUsers }}</p>
+                        <div class="absolute bottom-4 right-4 text-slate-300 transition-colors group-hover:text-slate-500"><i class="fas fa-sync-alt"></i></div>
+                    </div>
+                    <div class="absolute h-full w-full rounded-2xl border border-slate-200 bg-white p-6" style="backface-visibility: hidden; transform: rotateY(180deg);">
+                        <div class="flex h-full items-center justify-around text-center">
+                            <div><p class="text-xs font-medium text-slate-500">Admin</p><p class="mt-1 text-2xl font-bold text-slate-900">{{ $totalAdmin }}</p></div>
+                            <div class="h-full w-px bg-slate-200"></div>
+                            <div><p class="text-xs font-medium text-slate-500">Produksi</p><p class="mt-1 text-2xl font-bold text-slate-900">{{ $totalProduksi }}</p></div>
+                            <div class="h-full w-px bg-slate-200"></div>
+                            <div><p class="text-xs font-medium text-slate-500">Pengiriman</p><p class="mt-1 text-2xl font-bold text-slate-900">{{ $totalPengiriman }}</p></div>
+                        </div>
+                        <div class="absolute bottom-4 right-4 text-slate-300 transition-colors group-hover:text-slate-500"><i class="fas fa-sync-alt"></i></div>
+                    </div>
+                </div>
             </div>
             <div class="group h-[116px]" style="perspective: 1000px">
                 <div x-data="{ flipped: false }" @click="flipped = !flipped" class="relative h-full w-full cursor-pointer transition-transform duration-500" style="transform-style: preserve-3d;" :class="{ '[transform:rotateY(180deg)]': flipped }">

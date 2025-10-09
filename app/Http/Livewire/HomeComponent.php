@@ -8,6 +8,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class HomeComponent extends Component
@@ -19,7 +20,8 @@ class HomeComponent extends Component
     public string $filterYear;
 
     public int $totalItems = 0, $totalRawItems = 0, $totalFinishedItems = 0;
-    public int $totalUsers = 0, $totalStock = 0, $totalRawStock = 0, $totalFinishedStock = 0;
+    public int $totalUsers = 0, $totalAdmin = 0, $totalProduksi = 0, $totalPengiriman = 0;
+    public int $totalStock = 0, $totalRawStock = 0, $totalFinishedStock = 0;
     public int $totalIn = 0, $totalInRaw = 0, $totalInFinished = 0;
     public int $totalOut = 0, $totalOutUsed = 0, $totalOutShippedRaw = 0, $totalOutShippedFinished = 0;
     public int $totalDamaged = 0, $totalDamagedRaw = 0, $totalDamagedFinished = 0;
@@ -28,7 +30,7 @@ class HomeComponent extends Component
     {
         $this->data = ['title' => 'Dashboard', 'urlPath' => 'home'];
         $this->resetFilters(false);
-        $this->loadDashboardData();
+        $this->updateStatistics();
     }
 
     public function resetFilters($loadData = true): void
@@ -38,7 +40,7 @@ class HomeComponent extends Component
         $this->filterMonth = now()->format('Y-m');
         $this->filterYear = now()->format('Y');
         if ($loadData) {
-            $this->loadDashboardData();
+            $this->updateStatistics();
         }
     }
 
@@ -49,11 +51,6 @@ class HomeComponent extends Component
         if ($month) $this->filterMonth = $month;
         if ($year) $this->filterYear = $year;
 
-        $this->loadDashboardData();
-    }
-
-    public function loadDashboardData(): void
-    {
         $this->updateStatistics();
     }
 
@@ -66,7 +63,9 @@ class HomeComponent extends Component
                 try {
                     $date = Carbon::parse($this->filterMonth);
                     return $query->whereYear('created_at', $date->year)->whereMonth('created_at', $date->month);
-                } catch (\Exception $e) { return $query; }
+                } catch (\Exception $e) {
+                    return $query;
+                }
             case 'yearly':
                 return $query->whereYear('created_at', $this->filterYear);
             default:
@@ -89,9 +88,17 @@ class HomeComponent extends Component
                 SUM(CASE WHEN item_type = 'barang_mentah' THEN quantity ELSE 0 END) as total_raw_stock,
                 SUM(CASE WHEN item_type = 'barang_jadi' THEN quantity ELSE 0 END) as total_finished_stock
             ")->first();
+            
+            $userCountsByRole = User::query()
+                ->select('role', DB::raw('count(*) as total'))
+                ->groupBy('role')
+                ->pluck('total', 'role');
 
             return [
-                'totalUsers' => User::count(),
+                'totalUsers' => $userCountsByRole->sum(),
+                'totalAdmin' => (int) ($userCountsByRole['admin'] ?? 0),
+                'totalProduksi' => (int) ($userCountsByRole['produksi'] ?? 0),
+                'totalPengiriman' => (int) ($userCountsByRole['pengiriman'] ?? 0),
                 'totalItems' => (int) $itemCounts->total_items,
                 'totalRawItems' => (int) $itemCounts->total_raw_items,
                 'totalFinishedItems' => (int) $itemCounts->total_finished_items,

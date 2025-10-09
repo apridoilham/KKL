@@ -5,10 +5,8 @@ namespace App\Exports;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Events\BeforeSheet;
 
-class ItemsExport implements FromCollection, WithHeadings, WithMapping, WithEvents
+class ItemsExport implements FromCollection, WithHeadings, WithMapping
 {
     protected $data;
     private $rowNumber = 0;
@@ -47,15 +45,6 @@ class ItemsExport implements FromCollection, WithHeadings, WithMapping, WithEven
             $item->quantity,
             $item->status === 'available' ? 'Tersedia' : 'Habis',
             $item->created_at->format('Y-m-d H:i:s'),
-        ];
-    }
-
-    public function registerEvents(): array
-    {
-        return [
-            BeforeSheet::class => function(BeforeSheet $event) {
-                $this->rowNumber = 0; // Reset nomor baris sebelum sheet dibuat
-            },
         ];
     }
 }
