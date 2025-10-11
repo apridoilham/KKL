@@ -74,11 +74,6 @@
                                 <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
                                 <h3 class="mt-2 text-lg font-semibold text-slate-800">Item Tidak Ditemukan</h3>
                                 <p class="mt-1 text-sm text-slate-500">Tidak ada data yang cocok dengan pencarian Anda.</p>
-                                @can('manage-items')
-                                <div class="mt-6">
-                                    <button wire:click="create" class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"><i class="fas fa-plus mr-2"></i>Tambah Item</button>
-                                </div>
-                                @endcan
                             </td>
                         </tr>
                     @endforelse
@@ -119,7 +114,7 @@
                         </div>
                         <div>
                             <label for="code" class="text-sm font-medium text-slate-700">Kode Item</label>
-                             <div class="relative mt-1">
+                            <div class="relative mt-1">
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <i class="fas fa-barcode text-slate-400"></i>
                                 </div>

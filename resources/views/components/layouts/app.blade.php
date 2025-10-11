@@ -15,7 +15,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="bg-slate-100 font-sans text-slate-600">
+<body class="bg-slate-100 font-sans text-slate-600" x-data="{ logoutModalOpen: false }">
     <div x-data="{ sidebarOpen: window.innerWidth > 1024 }" class="flex h-screen bg-slate-100">
 
         @include('components.partials.sidebar')
@@ -73,5 +73,45 @@
     </div>
 
     <x-session-toaster />
+
+    <div
+        x-show="logoutModalOpen"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+        x-cloak
+    >
+        <div
+            x-show="logoutModalOpen"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            @click.away="logoutModalOpen = false"
+            class="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl"
+        >
+            <div class="p-8 text-center">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-500">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                </div>
+                <h3 class="mt-5 text-xl font-bold text-slate-800">Konfirmasi Logout</h3>
+                <p class="mt-2 text-slate-600">Apakah Anda yakin ingin keluar dari sesi ini?</p>
+            </div>
+            <div class="flex justify-center space-x-4 rounded-b-xl border-t border-slate-200 bg-slate-50 p-6">
+                <button @click="logoutModalOpen = false" type="button" class="rounded-lg border border-slate-300 bg-white px-8 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100">
+                    Batal
+                </button>
+                <a href="{{ route('logout') }}" class="inline-flex items-center rounded-lg bg-red-600 px-8 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-700">
+                    Ya, Logout
+                </a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
