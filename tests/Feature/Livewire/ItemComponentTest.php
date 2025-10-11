@@ -20,8 +20,7 @@ class ItemComponentTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Cari user admin yang dibuat oleh migrasi. Ini cara yang paling benar.
-        $this->admin = User::where('username', 'admin')->firstOrFail();
+        $this->admin = User::factory()->create(['role' => 'admin']);
         $this->staff = User::factory()->create(['role' => 'produksi']);
     }
 
@@ -39,7 +38,7 @@ class ItemComponentTest extends TestCase
 
         $this->assertDatabaseHas('items', ['name' => 'Laptop Baru', 'code' => 'LP-001']);
     }
-    
+
     #[Test]
     public function an_admin_can_update_an_item(): void
     {

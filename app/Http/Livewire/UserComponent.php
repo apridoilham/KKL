@@ -33,15 +33,29 @@ class UserComponent extends Component
             'role' => 'required|in:admin,produksi,pengiriman',
             'security_question' => 'nullable|string|max:255',
         ];
-        
+
         $rules['security_answer'] = $this->security_question ? 'required|string|max:255' : 'nullable|string|max:255';
-        
+
         if (!$this->isEditMode) {
             $rules['password'] = 'required|string|min:6|confirmed';
         } else {
             $rules['password'] = 'nullable|string|min:6|confirmed';
         }
         return $rules;
+    }
+
+    protected function messages()
+    {
+        return [
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'username.required' => 'Username wajib diisi.',
+            'username.unique' => 'Username ini sudah digunakan.',
+            'role.required' => 'Peran (role) wajib dipilih.',
+            'security_answer.required' => 'Jawaban keamanan wajib diisi jika pertanyaan keamanan diisi.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal harus 6 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+        ];
     }
 
     public function mount(): void
@@ -78,7 +92,7 @@ class UserComponent extends Component
         $this->username = $user->username;
         $this->role = $user->role;
         $this->security_question = $user->security_question;
-        $this->security_answer = null; 
+        $this->security_answer = null;
         $this->isEditMode = true;
         $this->isModalOpen = true;
     }
@@ -102,7 +116,6 @@ class UserComponent extends Component
             $userData['security_question'] = $this->security_question;
             $userData['security_answer'] = Hash::make($this->security_answer);
         } elseif ($this->isEditMode && empty($this->security_question)) {
-            // Jika pertanyaan keamanan dikosongkan saat edit, hapus juga jawabannya
             $userData['security_question'] = null;
             $userData['security_answer'] = null;
         }

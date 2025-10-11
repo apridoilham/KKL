@@ -99,7 +99,7 @@ class ProductionComponent extends Component
         $finishedGood->bomRawMaterials()->detach($rawMaterialId);
     }
 
-    public function produce(): mixed
+    public function produce(): void
     {
         try {
             $this->validate(
@@ -113,9 +113,8 @@ class ProductionComponent extends Component
                 ]
             );
         } catch (ValidationException $e) {
-            $message = $e->validator->errors()->first();
-            $this->dispatch('toast', status: 'failed', message: $message);
-            return null;
+            $this->dispatch('toast', status: 'failed', message: $e->validator->errors()->first());
+            return;
         }
 
         try {
@@ -148,10 +147,11 @@ class ProductionComponent extends Component
             });
 
             Cache::flush();
-            return redirect('/production')->with('status', 'Produksi berhasil dicatat.');
+            $this->dispatch('toast', status: 'success', message: 'Produksi berhasil dicatat.');
+            $this->reset(['selectedFinishedGoodId', 'quantityToProduce']);
+            $this->quantityToProduce = 1;
         } catch (\Exception $e) {
             $this->dispatch('toast', status: 'failed', message: $e->getMessage());
-            return null;
         }
     }
 

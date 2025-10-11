@@ -22,7 +22,6 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('manage-transactions', fn(User $user) => $checkRole($user, ['admin', 'pengiriman']));
         Gate::define('edit-transactions', fn(User $user) => $checkRole($user, 'admin'));
         Gate::define('manage-production', fn(User $user) => $checkRole($user, ['admin', 'produksi']));
-        Gate::define('view-pages', fn(User $user) => $checkRole($user, ['admin', 'produksi', 'pengiriman']));
         Gate::define('view-reports', fn(User $user) => $checkRole($user, 'admin'));
     }
 }

@@ -79,7 +79,6 @@ class HomeComponent extends Component
         $cacheDuration = config('inventory.stats_cache_duration', 300);
 
         $stats = Cache::remember('dashboard-stats-' . $filterKey, $cacheDuration, function () {
-            $baseTransactionQuery = $this->applyTimeFilter(Transaction::query());
             $itemCounts = Item::selectRaw("
                 COUNT(*) as total_items,
                 SUM(CASE WHEN item_type = 'barang_mentah' THEN 1 ELSE 0 END) as total_raw_items,
@@ -88,7 +87,21 @@ class HomeComponent extends Component
                 SUM(CASE WHEN item_type = 'barang_mentah' THEN quantity ELSE 0 END) as total_raw_stock,
                 SUM(CASE WHEN item_type = 'barang_jadi' THEN quantity ELSE 0 END) as total_finished_stock
             ")->first();
-            
+
+            $transactionCounts = $this->applyTimeFilter(Transaction::query())
+                ->selectRaw("
+                    SUM(CASE WHEN type IN ('masuk_mentah', 'masuk_jadi') THEN quantity ELSE 0 END) as total_in,
+                    SUM(CASE WHEN type = 'masuk_mentah' THEN quantity ELSE 0 END) as total_in_raw,
+                    SUM(CASE WHEN type = 'masuk_jadi' THEN quantity ELSE 0 END) as total_in_finished,
+                    SUM(CASE WHEN type IN ('keluar_dikirim', 'keluar_terpakai', 'keluar_mentah') THEN quantity ELSE 0 END) as total_out,
+                    SUM(CASE WHEN type = 'keluar_terpakai' THEN quantity ELSE 0 END) as total_out_used,
+                    SUM(CASE WHEN type = 'keluar_mentah' THEN quantity ELSE 0 END) as total_out_shipped_raw,
+                    SUM(CASE WHEN type = 'keluar_dikirim' THEN quantity ELSE 0 END) as total_out_shipped_finished,
+                    SUM(CASE WHEN type IN ('rusak_mentah', 'rusak_jadi') THEN quantity ELSE 0 END) as total_damaged,
+                    SUM(CASE WHEN type = 'rusak_mentah' THEN quantity ELSE 0 END) as total_damaged_raw,
+                    SUM(CASE WHEN type = 'rusak_jadi' THEN quantity ELSE 0 END) as total_damaged_finished
+                ")->first();
+
             $userCountsByRole = User::query()
                 ->select('role', DB::raw('count(*) as total'))
                 ->groupBy('role')
@@ -105,16 +118,16 @@ class HomeComponent extends Component
                 'totalStock' => (int) $itemCounts->total_stock,
                 'totalRawStock' => (int) $itemCounts->total_raw_stock,
                 'totalFinishedStock' => (int) $itemCounts->total_finished_stock,
-                'totalIn' => (int) (clone $baseTransactionQuery)->whereIn('type', ['masuk_mentah', 'masuk_jadi'])->sum('quantity'),
-                'totalInRaw' => (int) (clone $baseTransactionQuery)->where('type', 'masuk_mentah')->sum('quantity'),
-                'totalInFinished' => (int) (clone $baseTransactionQuery)->where('type', 'masuk_jadi')->sum('quantity'),
-                'totalOut' => (int) (clone $baseTransactionQuery)->whereIn('type', ['keluar_dikirim', 'keluar_terpakai', 'keluar_mentah'])->sum('quantity'),
-                'totalOutUsed' => (int) (clone $baseTransactionQuery)->where('type', 'keluar_terpakai')->sum('quantity'),
-                'totalOutShippedRaw' => (int) (clone $baseTransactionQuery)->where('type', 'keluar_mentah')->sum('quantity'),
-                'totalOutShippedFinished' => (int) (clone $baseTransactionQuery)->where('type', 'keluar_dikirim')->sum('quantity'),
-                'totalDamaged' => (int) (clone $baseTransactionQuery)->whereIn('type', ['rusak_mentah', 'rusak_jadi'])->sum('quantity'),
-                'totalDamagedRaw' => (int) (clone $baseTransactionQuery)->where('type', 'rusak_mentah')->sum('quantity'),
-                'totalDamagedFinished' => (int) (clone $baseTransactionQuery)->where('type', 'rusak_jadi')->sum('quantity'),
+                'totalIn' => (int) $transactionCounts->total_in,
+                'totalInRaw' => (int) $transactionCounts->total_in_raw,
+                'totalInFinished' => (int) $transactionCounts->total_in_finished,
+                'totalOut' => (int) $transactionCounts->total_out,
+                'totalOutUsed' => (int) $transactionCounts->total_out_used,
+                'totalOutShippedRaw' => (int) $transactionCounts->total_out_shipped_raw,
+                'totalOutShippedFinished' => (int) $transactionCounts->total_out_shipped_finished,
+                'totalDamaged' => (int) $transactionCounts->total_damaged,
+                'totalDamagedRaw' => (int) $transactionCounts->total_damaged_raw,
+                'totalDamagedFinished' => (int) $transactionCounts->total_damaged_finished,
             ];
         });
 

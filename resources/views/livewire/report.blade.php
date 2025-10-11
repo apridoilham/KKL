@@ -5,7 +5,7 @@
         <p class="mt-1 text-slate-500">Filter dan buat laporan berdasarkan data inventaris Anda.</p>
     </div>
 
-    <div x-data="{ filterType: @entangle('filter'), reportIsAvailable: @entangle('hasReportData') }" class="rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div x-data="{ filterType: @entangle('filter') }" class="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div class="border-b border-slate-200 p-6">
             <h3 class="text-lg font-semibold text-slate-800">Opsi Laporan</h3>
         </div>
@@ -13,9 +13,9 @@
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <div>
                     <label for="filter" class="text-sm font-medium text-slate-700">1. Tipe Data</label>
-                    <select 
-                        wire:model.live="filter" 
-                        id="filter" 
+                    <select
+                        wire:model.live="filter"
+                        id="filter"
                         class="mt-1 block w-full appearance-none rounded-lg border bg-white py-2.5 px-4 text-slate-800 outline-none focus:ring-1 transition-colors"
                         :class="{
                             'border-green-300 text-green-900 focus:border-green-500 focus:ring-green-500': filterType === 'in',
@@ -92,53 +92,34 @@
                 </div>
             </div>
         </div>
-        <div 
-            x-data="{
-                checkAndFire(action, checkReportData = false) {
-                    if (@this.get('filter') === '' || @this.get('filterBy') === '') {
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { status: 'failed', message: 'Harap pilih Tipe Data dan Periode Laporan terlebih dahulu.' } }));
-                        return;
-                    }
-                    if (checkReportData && !@this.get('hasReportData')) {
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { status: 'failed', message: 'Buat Pratinjau terlebih dahulu sebelum mencetak atau download.' } }));
-                        return;
-                    }
-                    @this.call(action);
-                }
-            }"
+        <div
+            x-data="reportActions()"
             class="flex items-center justify-end space-x-3 rounded-b-xl border-t border-slate-200 bg-slate-50 p-6"
         >
-            <button @click="checkAndFire('handleReset')" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100">Reset</button>
-            <button @click="checkAndFire('generatePreview')" wire:loading.attr="disabled" wire:target="generatePreview" class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Buat Pratinjau</button>
-            <button @click="checkAndFire('handlePrint', true)" wire:loading.attr="disabled" :disabled="!reportIsAvailable" class="inline-flex items-center rounded-lg border border-transparent bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-cyan-700 disabled:bg-cyan-300 disabled:cursor-not-allowed">
+            <button type="button" @click="checkAndFire('handleReset')" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100">Reset</button>
+            <button type="button" @click="checkAndFire('generatePreview')" wire:loading.attr="disabled" wire:target="generatePreview" class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Buat Pratinjau</button>
+            <button type="button" @click="checkAndFire('handlePrint', true)" wire:loading.attr="disabled" :disabled="!reportIsAvailable" class="inline-flex items-center rounded-lg border border-transparent bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-cyan-700 disabled:bg-cyan-300 disabled:cursor-not-allowed">
                 <i class="fas fa-print mr-2"></i> Cetak
             </button>
             <div x-data="{ open: false }" class="relative">
-                <button @click="if (reportIsAvailable) { open = !open }" :disabled="!reportIsAvailable" class="inline-flex items-center rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-400 disabled:bg-amber-300 disabled:cursor-not-allowed">
+                <button type="button" @click="open = !open" :disabled="!reportIsAvailable" class="inline-flex items-center rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-400 disabled:bg-amber-300 disabled:cursor-not-allowed">
                     <i class="fas fa-download mr-2"></i> Download <i class="fas fa-chevron-down ml-2 text-xs"></i>
                 </button>
                 <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 z-10 mt-2 w-40 rounded-lg bg-white py-2 shadow-xl ring-1 ring-slate-200" x-cloak>
-                    @php
-                        $queryParams = array_filter([
-                            'filter' => $filter, 'filterBy' => $filterBy, 'itemType' => $itemType,
-                            'dateFrom' => $dateFrom, 'dateUntil' => $dateUntil,
-                            'monthFrom' => $monthFrom, 'monthUntil' => $monthUntil, 'selectYear' => $selectYear,
-                        ]);
-                    @endphp
-                    <a href="{{ route('report.download', array_merge(['type' => 'pdf'], $queryParams)) }}" class="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">
+                    <button type="button" @click="download('pdf'); open = false" class="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">
                         <i class="fas fa-file-pdf fa-sm fa-fw mr-2 text-red-500"></i> PDF
-                    </a>
-                    <a href="{{ route('report.download', array_merge(['type' => 'xlsx'], $queryParams)) }}" class="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">
+                    </button>
+                    <button type="button" @click="download('xlsx'); open = false" class="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">
                         <i class="fas fa-file-excel fa-sm fa-fw mr-2 text-green-500"></i> Excel (XLSX)
-                    </a>
-                    <a href="{{ route('report.download', array_merge(['type' => 'csv'], $queryParams)) }}" class="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">
+                    </button>
+                    <button type="button" @click="download('csv'); open = false" class="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100">
                         <i class="fas fa-file-csv fa-sm fa-fw mr-2 text-sky-500"></i> CSV
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-    
+
     @if ($reportData)
     <div class="mt-8 rounded-xl border border-slate-200 bg-white">
         <div class="p-6 border-b border-slate-200">
@@ -168,5 +149,51 @@
     document.addEventListener('livewire:initialized', () => {
         @this.on('open-new-tab', ({ url }) => { window.open(url, '_blank'); });
     });
+
+    function reportActions() {
+        return {
+            reportIsAvailable: @entangle('hasReportData'),
+            checkAndFire(action, checkReportData = false) {
+                if (this.$wire.get('filter') === '' || this.$wire.get('filterBy') === '') {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { status: 'failed', message: 'Harap pilih Tipe Data dan Periode Laporan terlebih dahulu.' } }));
+                    return;
+                }
+                if (checkReportData && !this.reportIsAvailable) {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { status: 'failed', message: 'Buat Pratinjau terlebih dahulu sebelum mencetak atau download.' } }));
+                    return;
+                }
+                this.$wire.call(action);
+            },
+            download(type) {
+                if (!this.reportIsAvailable) {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { status: 'failed', message: 'Buat Pratinjau terlebih dahulu sebelum download.' } }));
+                    return;
+                }
+                const token = Date.now();
+                const queryParams = {
+                    filter: this.$wire.get('filter'),
+                    filterBy: this.$wire.get('filterBy'),
+                    itemType: this.$wire.get('itemType'),
+                    dateFrom: this.$wire.get('dateFrom'),
+                    dateUntil: this.$wire.get('dateUntil'),
+                    monthFrom: this.$wire.get('monthFrom'),
+                    monthUntil: this.$wire.get('monthUntil'),
+                    selectYear: this.$wire.get('selectYear'),
+                };
+                const params = new URLSearchParams(Object.fromEntries(Object.entries(queryParams).filter(([_, v]) => v != null && v !== ''))).toString();
+                const url = `{{ url('report/download') }}/${type}?${params}&download_token=${token}`;
+                window.location.href = url;
+                
+                let interval = setInterval(() => {
+                    const cookieValue = `; ${document.cookie}`.split(`; download_token=`).pop().split(';')[0];
+                    if (cookieValue === String(token)) {
+                        clearInterval(interval);
+                        document.cookie = `download_token=${token}; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+                        window.dispatchEvent(new CustomEvent('toast', { detail: { status: 'success', message: 'Unduhan telah dimulai.' } }));
+                    }
+                }, 500);
+            }
+        }
+    }
 </script>
 @endpush

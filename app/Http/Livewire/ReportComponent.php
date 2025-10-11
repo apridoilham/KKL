@@ -47,7 +47,7 @@ class ReportComponent extends Component
         $this->reportData = null;
         $this->noDataFound = false;
         $this->hasReportData = false;
-        
+
         $baseRules = [
             'filter' => 'required',
             'filterBy' => 'required',
@@ -61,12 +61,12 @@ class ReportComponent extends Component
         } elseif ($this->filterBy == 'year') {
             $periodRules = ['selectYear' => 'required|integer'];
         }
-        
+
         $validated = $this->validate(array_merge($baseRules, $periodRules));
-        
+
         $params = array_merge($validated, [
-            'monthFrom' => $this->monthFrom, 
-            'monthUntil' => $this->monthUntil, 
+            'monthFrom' => $this->monthFrom,
+            'monthUntil' => $this->monthUntil,
             'selectYear' => $this->selectYear,
             'itemType' => $this->itemType,
         ]);
@@ -86,13 +86,13 @@ class ReportComponent extends Component
     {
         if (!$this->reportData) return;
         $queryParams = [
-            'filter' => $this->filter, 
-            'filterBy' => $this->filterBy, 
+            'filter' => $this->filter,
+            'filterBy' => $this->filterBy,
             'itemType' => $this->itemType,
-            'dateFrom' => $this->dateFrom, 
-            'dateUntil' => $this->dateUntil, 
-            'monthFrom' => $this->monthFrom, 
-            'monthUntil' => $this->monthUntil, 
+            'dateFrom' => $this->dateFrom,
+            'dateUntil' => $this->dateUntil,
+            'monthFrom' => $this->monthFrom,
+            'monthUntil' => $this->monthUntil,
             'selectYear' => $this->selectYear
         ];
         $url = route('print.report', array_filter($queryParams));
@@ -101,6 +101,19 @@ class ReportComponent extends Component
 
     public function render()
     {
-        return view('livewire.report')->layout('components.layouts.app', ['data' => $this->data]);
+        $queryParams = array_filter([
+            'filter' => $this->filter,
+            'filterBy' => $this->filterBy,
+            'itemType' => $this->itemType,
+            'dateFrom' => $this->dateFrom,
+            'dateUntil' => $this->dateUntil,
+            'monthFrom' => $this->monthFrom,
+            'monthUntil' => $this->monthUntil,
+            'selectYear' => $this->selectYear,
+        ]);
+
+        return view('livewire.report', [
+            'queryParams' => $queryParams,
+        ])->layout('components.layouts.app', ['data' => $this->data]);
     }
 }

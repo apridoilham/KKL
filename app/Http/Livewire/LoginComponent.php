@@ -63,15 +63,13 @@ class LoginComponent extends Component
 
         Auth::login($user, $this->remember);
 
-        $role = Auth::user()->role;
+        $route = match (Auth::user()->role) {
+            'produksi' => '/production',
+            'pengiriman' => '/transaction',
+            default => route('home'),
+        };
 
-        if ($role === 'admin') {
-            return redirect()->route('home');
-        } elseif ($role === 'produksi') {
-            return redirect('/production');
-        } elseif ($role === 'pengiriman') {
-            return redirect('/transaction');
-        }
+        return redirect($route);
     }
 
     public function verifyData()
@@ -92,7 +90,7 @@ class LoginComponent extends Component
         $this->isUserFound = true;
         $this->securityQuestion = $user->security_question;
 
-        if ($this->isUserFound && $this->securityAnswer) {
+        if ($this->securityAnswer) {
             if (Hash::check($this->securityAnswer, $user->security_answer)) {
                 $this->isVerified = true;
             } else {

@@ -6,8 +6,10 @@ use App\Exports\ItemsExport;
 use App\Exports\TransactionsExport;
 use App\Traits\BuildsReportQuery;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Symfony\Component\HttpFoundation\Cookie;
 
 class ReportDownloadController extends Controller
 {
@@ -19,11 +21,11 @@ class ReportDownloadController extends Controller
             'filter' => 'required|in:item,in,out,damaged',
             'filterBy' => 'required|in:date,month,year',
             'itemType' => 'required|in:all,barang_mentah,barang_jadi',
-            'dateFrom' => 'nullable|date',
-            'dateUntil' => 'nullable|date',
-            'monthFrom' => 'nullable|integer',
-            'monthUntil' => 'nullable|integer',
-            'selectYear' => 'nullable|integer',
+            'dateFrom' => 'required_if:filterBy,date|nullable|date',
+            'dateUntil' => 'required_if:filterBy,date|nullable|date|after_or_equal:dateFrom',
+            'monthFrom' => 'required_if:filterBy,month|nullable|integer|min:1|max:12',
+            'monthUntil' => 'required_if:filterBy,month|nullable|integer|min:1|max:12|gte:monthFrom',
+            'selectYear' => 'required_if:filterBy,month,year|nullable|integer',
         ]);
 
         $filter = $validated['filter'];
@@ -36,17 +38,23 @@ class ReportDownloadController extends Controller
 
         $exportClass = $filter === 'item' ? new ItemsExport($data) : new TransactionsExport($data);
 
-        switch ($type) {
-            case 'pdf':
-                $view = $filter === 'item' ? 'livewire.reports.item-table' : 'livewire.reports.transaction-table';
-                $pdf = Pdf::loadView('livewire.report-print-template', ['data' => $data, 'view' => $view, 'title' => 'Laporan ' . ucfirst($filter)]);
-                return $pdf->download($fileName);
+        $response = match ($type) {
+            'pdf' => Pdf::loadView('livewire.report-print-template', [
+                'data' => $data,
+                'view' => $filter === 'item' ? 'livewire.reports.item-table' : 'livewire.reports.transaction-table',
+                'title' => 'Laporan ' . ucfirst($filter)
+            ])->download($fileName),
 
-            case 'xlsx':
-                return Excel::download($exportClass, $fileName);
+            'xlsx' => Excel::download($exportClass, $fileName),
 
-            case 'csv':
-                return Excel::download($exportClass, $fileName, \Maatwebsite\Excel\Excel::CSV);
+            'csv' => Excel::download($exportClass, $fileName, \Maatwebsite\Excel\Excel::CSV),
+        };
+
+        if ($request->has('download_token')) {
+            $cookie = cookie('download_token', $request->input('download_token'), 1);
+            $response->headers->setCookie($cookie);
         }
+
+        return $response;
     }
 }

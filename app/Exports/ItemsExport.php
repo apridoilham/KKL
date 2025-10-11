@@ -37,13 +37,20 @@ class ItemsExport implements FromCollection, WithHeadings, WithMapping
     public function map($item): array
     {
         $this->rowNumber++;
+
+        $statusText = match ($item->status) {
+            'available' => 'Tersedia',
+            'out' => 'Habis',
+            default => ucfirst($item->status),
+        };
+
         return [
             $this->rowNumber,
             $item->code,
             $item->category,
             $item->name,
             $item->quantity,
-            $item->status === 'available' ? 'Tersedia' : 'Habis',
+            $statusText,
             $item->created_at->format('Y-m-d H:i:s'),
         ];
     }

@@ -29,12 +29,15 @@ class Item extends Model
     public function bomRawMaterials(): BelongsToMany
     {
         return $this->belongsToMany(Item::class, 'bill_of_materials', 'finished_good_id', 'raw_material_id')
-                        ->withPivot('quantity_required')
-                        ->withTimestamps();
+            ->withPivot('quantity_required')
+            ->withTimestamps();
     }
 
     public function increaseStock(int $amount): void
     {
+        if ($amount < 0) {
+            throw new Exception('Jumlah untuk menambah stok harus positif.');
+        }
         $this->quantity += $amount;
         $this->status = $this->quantity > 0 ? 'available' : 'out';
         $this->save();
@@ -42,6 +45,9 @@ class Item extends Model
 
     public function decreaseStock(int $amount): void
     {
+        if ($amount < 0) {
+            throw new Exception('Jumlah untuk mengurangi stok harus positif.');
+        }
         if ($this->quantity < $amount) {
             throw new Exception('Stok tidak mencukupi untuk transaksi ini.');
         }

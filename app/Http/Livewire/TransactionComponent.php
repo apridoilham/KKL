@@ -65,14 +65,19 @@ class TransactionComponent extends Component
         }
     }
 
+    private function updateFilterMonth(): void
+    {
+        $this->filterMonth = $this->filterSelectedYear . '-' . str_pad($this->filterSelectedMonth, 2, '0', STR_PAD_LEFT);
+    }
+
     public function updatedFilterSelectedMonth(): void
     {
-        $this->filterMonth = $this->filterSelectedYear . '-' . $this->filterSelectedMonth;
+        $this->updateFilterMonth();
     }
 
     public function updatedFilterSelectedYear(): void
     {
-        $this->filterMonth = $this->filterSelectedYear . '-' . $this->filterSelectedMonth;
+        $this->updateFilterMonth();
     }
 
     public function updatedType($value): void

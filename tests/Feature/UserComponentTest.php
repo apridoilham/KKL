@@ -18,7 +18,7 @@ class UserComponentTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->admin = User::where('username', 'admin')->firstOrFail();
+        $this->admin = User::factory()->create(['role' => 'admin']);
     }
 
     #[Test]

@@ -26,7 +26,7 @@ class DummyDataSeeder extends Seeder
 
         $this->command->info('Membuat data barang mentah dan transaksi...');
         $rawMaterials = $this->createRawMaterialsAndTransactions();
-        
+
         $this->command->info('Membuat data barang jadi dan resep (BOM)...');
         $this->createFinishedGoodsAndBom($rawMaterials);
 

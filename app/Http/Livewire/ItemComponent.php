@@ -30,12 +30,11 @@ class ItemComponent extends Component
 
     public function mount(): void
     {
-        $title = 'Manajemen Semua Barang';
-        if ($this->filterType === 'barang_mentah') {
-            $title = 'Manajemen Bahan Mentah';
-        } elseif ($this->filterType === 'barang_jadi') {
-            $title = 'Manajemen Barang Jadi';
-        }
+        $title = match ($this->filterType) {
+            'barang_mentah' => 'Manajemen Bahan Mentah',
+            'barang_jadi' => 'Manajemen Barang Jadi',
+            default => 'Manajemen Semua Barang',
+        };
         $this->data = ['title' => $title, 'urlPath' => 'item'];
     }
 
@@ -74,7 +73,7 @@ class ItemComponent extends Component
 
         if (!$this->id) {
             $dataToSave['quantity'] = 0;
-            $dataToSave['status'] = 'out';
+            $dataToSave['status'] = 'available';
         }
 
         Item::updateOrCreate(['id' => $this->id], $dataToSave);
