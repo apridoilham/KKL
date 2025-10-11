@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Symfony\Component\HttpFoundation\Cookie;
 
 class ReportDownloadController extends Controller
 {
@@ -38,7 +37,7 @@ class ReportDownloadController extends Controller
 
         $exportClass = $filter === 'item' ? new ItemsExport($data) : new TransactionsExport($data);
 
-        $response = match ($type) {
+        return match ($type) {
             'pdf' => Pdf::loadView('livewire.report-print-template', [
                 'data' => $data,
                 'view' => $filter === 'item' ? 'livewire.reports.item-table' : 'livewire.reports.transaction-table',
@@ -49,12 +48,5 @@ class ReportDownloadController extends Controller
 
             'csv' => Excel::download($exportClass, $fileName, \Maatwebsite\Excel\Excel::CSV),
         };
-
-        if ($request->has('download_token')) {
-            $cookie = cookie('download_token', $request->input('download_token'), 1);
-            $response->headers->setCookie($cookie);
-        }
-
-        return $response;
     }
 }

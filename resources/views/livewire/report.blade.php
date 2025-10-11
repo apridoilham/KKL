@@ -169,7 +169,7 @@
                     window.dispatchEvent(new CustomEvent('toast', { detail: { status: 'failed', message: 'Buat Pratinjau terlebih dahulu sebelum download.' } }));
                     return;
                 }
-                const token = Date.now();
+                
                 const queryParams = {
                     filter: this.$wire.get('filter'),
                     filterBy: this.$wire.get('filterBy'),
@@ -180,17 +180,14 @@
                     monthUntil: this.$wire.get('monthUntil'),
                     selectYear: this.$wire.get('selectYear'),
                 };
-                const params = new URLSearchParams(Object.fromEntries(Object.entries(queryParams).filter(([_, v]) => v != null && v !== ''))).toString();
-                const url = `{{ url('report/download') }}/${type}?${params}&download_token=${token}`;
-                window.location.href = url;
                 
-                let interval = setInterval(() => {
-                    const cookieValue = `; ${document.cookie}`.split(`; download_token=`).pop().split(';')[0];
-                    if (cookieValue === String(token)) {
-                        clearInterval(interval);
-                        document.cookie = `download_token=${token}; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
-                        window.dispatchEvent(new CustomEvent('toast', { detail: { status: 'success', message: 'Unduhan telah dimulai.' } }));
-                    }
+                const params = new URLSearchParams(Object.fromEntries(Object.entries(queryParams).filter(([_, v]) => v != null && v !== ''))).toString();
+                const url = `{{ url('report/download') }}/${type}?${params}`;
+                
+                window.location.href = url;
+
+                setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { status: 'success', message: 'Unduhan telah dimulai.' } }));
                 }, 500);
             }
         }
