@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\Auth; // <-- Pastikan Auth di-import
+use Illuminate\Support\Facades\Log; // <-- Import Log jika ingin debug
 
 class TransactionComponent extends Component
 {
@@ -40,6 +42,8 @@ class TransactionComponent extends Component
     public string $filterSelectedMonth;
     public string $filterSelectedYear;
 
+    public array $availableTypes = [];
+
     protected array $queryString = [
         'search' => ['except' => ''], 'perPage' => ['except' => 10], 'filterType' => ['except' => 'all'],
     ];
@@ -49,7 +53,54 @@ class TransactionComponent extends Component
         $this->data = ['title' => 'Transaksi', 'urlPath' => 'transaction'];
         $this->resetDateFilters(false);
         $this->loadItems();
+        $this->setAvailableTypes(); // Panggil method untuk set tipe
     }
+
+    private function setAvailableTypes(): void
+    {
+        $user = Auth::user();
+        // Jika user null (seharusnya tidak terjadi di middleware auth), beri array kosong
+        if (!$user) {
+            $this->availableTypes = [];
+            return;
+        }
+
+        $allManualTypes = [
+            'masuk_mentah' => 'Masuk (Bahan Mentah)',
+            'masuk_jadi' => 'Masuk (Barang Jadi)',
+            'keluar_mentah' => 'Keluar (Dikirim - Bahan Mentah)',
+            'keluar_dikirim' => 'Keluar (Dikirim - Barang Jadi)',
+            'rusak_mentah' => 'Rusak (Bahan Mentah)',
+            'rusak_jadi' => 'Rusak (Barang Jadi)',
+        ];
+
+        // Debugging (hapus setelah selesai)
+        // Log::info('User Role for Available Types: ' . $user->role);
+
+        if ($user->role === 'pengiriman') {
+            $this->availableTypes = [
+                'keluar_mentah' => 'Keluar (Dikirim - Bahan Mentah)',
+                'keluar_dikirim' => 'Keluar (Dikirim - Barang Jadi)',
+            ];
+        } elseif ($user->role === 'admin') {
+             $this->availableTypes = $allManualTypes; // Admin bisa semua
+        } elseif ($user->role === 'produksi') {
+             // Contoh: produksi hanya boleh input rusak
+             $this->availableTypes = [
+                 'rusak_mentah' => 'Rusak (Bahan Mentah)',
+                 'rusak_jadi' => 'Rusak (Barang Jadi)',
+             ];
+             // Jika produksi boleh semua seperti admin, uncomment baris di bawah dan comment blok di atasnya
+             // $this->availableTypes = $allManualTypes;
+        } else {
+            // Role lain tidak bisa input manual
+            $this->availableTypes = [];
+        }
+
+        // Debugging (hapus setelah selesai)
+        // Log::info('Available Types Set: ' . json_encode($this->availableTypes));
+    }
+
 
     public function resetDateFilters($resetPage = true): void
     {
@@ -89,6 +140,7 @@ class TransactionComponent extends Component
         $this->updateFilterMonth();
     }
 
+
     public function updatedType($value): void
     {
         $this->loadItems($value);
@@ -124,13 +176,20 @@ class TransactionComponent extends Component
 
     public function edit(int $id): void
     {
-        Gate::authorize('edit-transactions');
+        Gate::authorize('edit-transactions'); // Hanya admin
         $transaction = Transaction::findOrFail($id);
+
+        // Keamanan ganda: cek role lagi
+        if (Auth::user()->role === 'pengiriman') {
+             $this->dispatch('toast', status: 'failed', message: 'Anda tidak memiliki izin untuk mengedit transaksi.');
+             return;
+        }
 
         if (in_array($transaction->type, ['produksi_jadi', 'produksi_terpakai'])) {
             $this->dispatch('toast', status: 'failed', message: 'Transaksi produksi tidak dapat diedit.');
             return;
         }
+
 
         $this->id = $transaction->id;
         $this->itemId = $transaction->item_id;
@@ -147,17 +206,26 @@ class TransactionComponent extends Component
         $this->isModalOpen = true;
     }
 
+
     public function store(): void
     {
         if ($this->id) {
-            Gate::authorize('edit-transactions');
+            Gate::authorize('edit-transactions'); // Hanya admin
+             if(Auth::user()->role !== 'admin') { // Keamanan ganda
+                 $this->dispatch('toast', status: 'failed', message: 'Anda tidak diizinkan mengubah transaksi.');
+                 return;
+             }
         } else {
-            Gate::authorize('manage-transactions');
+            Gate::authorize('manage-transactions'); // Admin & Pengiriman bisa create
+             if(Auth::user()->role === 'pengiriman' && !in_array($this->type, ['keluar_mentah', 'keluar_dikirim'])) {
+                 $this->dispatch('toast', status: 'failed', message: 'Anda hanya dapat membuat transaksi keluar.');
+                 return;
+             }
         }
 
         $rules = [
             'itemId' => 'required|exists:items,id',
-            'type' => ['required', Rule::in(['masuk_mentah', 'masuk_jadi', 'keluar_dikirim', 'keluar_mentah', 'rusak_mentah', 'rusak_jadi'])],
+            'type' => ['required', Rule::in(array_keys($this->availableTypes))],
             'quantity' => 'required|numeric|min:1',
             'description' => 'nullable|string',
             'tanggal_surat_jalan' => 'nullable|date',
@@ -181,6 +249,7 @@ class TransactionComponent extends Component
             'quantity.required' => 'Kuantitas tidak boleh kosong.',
             'quantity.min' => 'Kuantitas minimal harus 1.',
             'itemId.required' => 'Anda harus memilih barang.',
+            'type.in' => 'Tipe transaksi tidak valid untuk peran Anda.',
             'nama_supplier.required' => 'Nama supplier wajib diisi untuk barang masuk.',
             'nama_customer.required' => 'Nama customer wajib diisi untuk barang keluar.',
             'nomor_surat_jalan.required' => 'Nomor surat jalan wajib diisi.',
@@ -242,9 +311,10 @@ class TransactionComponent extends Component
         }
     }
 
+
     public function delete(int $id): void
     {
-        Gate::authorize('manage-transactions');
+        Gate::authorize('manage-transactions'); // Admin & Pengiriman bisa delete (dgn batasan)
         $transaction = Transaction::findOrFail($id);
 
         if (in_array($transaction->type, ['produksi_jadi', 'produksi_terpakai'])) {
@@ -252,7 +322,12 @@ class TransactionComponent extends Component
             return;
         }
 
-        if (auth()->user()->role !== 'admin') {
+        if (Auth::user()->role !== 'admin') {
+             if (!in_array($transaction->type, ['keluar_mentah', 'keluar_dikirim'])) {
+                 $this->dispatch('toast', status: 'failed', message: 'Anda hanya dapat menghapus transaksi keluar.');
+                 return;
+             }
+
             $lockTime = config('inventory.transaction_lock_time', 10);
             if (Carbon::parse($transaction->created_at)->diffInMinutes(Carbon::now()) > $lockTime) {
                 $this->dispatch('toast', status: 'failed', message: "Transaksi terkunci setelah {$lockTime} menit.");
@@ -279,6 +354,7 @@ class TransactionComponent extends Component
         }
     }
 
+
     public function render()
     {
         $transactionsQuery = Transaction::with('item')
@@ -293,6 +369,8 @@ class TransactionComponent extends Component
             ->when($this->filterType !== 'all', function ($query) {
                 $query->where('type', $this->filterType);
             });
+
+        // Hapus filter berdasarkan role dari render()
 
         if ($this->filterDateType !== 'all_time') {
             switch ($this->filterDateType) {

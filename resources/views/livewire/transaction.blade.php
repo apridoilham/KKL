@@ -192,24 +192,32 @@
                     </div>
                     <div class="space-y-6 p-8 max-h-[70vh] overflow-y-auto">
                         <div>
-                            <label for="type" class="text-sm font-medium text-slate-700">Tipe Transaksi <span class="text-red-500">*</span></label>
-                            <select wire:model.live="type" id="type" class="mt-1 block w-full appearance-none rounded-lg border border-slate-300 bg-white py-2.5 px-3 text-slate-800 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" required>
-                                <option value="">-- Pilih Tipe --</option>
-                                <optgroup label="Barang Masuk">
-                                    <option value="masuk_mentah">Masuk (Bahan Mentah)</option>
-                                    <option value="masuk_jadi">Masuk (Barang Jadi)</option>
-                                </optgroup>
-                                <optgroup label="Barang Keluar">
-                                    <option value="keluar_mentah">Keluar (Dikirim - Bahan Mentah)</option>
-                                    <option value="keluar_dikirim">Keluar (Dikirim - Barang Jadi)</option>
-                                </optgroup>
-                                <optgroup label="Barang Rusak">
-                                    <option value="rusak_mentah">Rusak (Bahan Mentah)</option>
-                                    <option value="rusak_jadi">Rusak (Barang Jadi)</option>
-                                </optgroup>
-                            </select>
-                            @error('type') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                        </div>
+                    <label for="type" class="text-sm font-medium text-slate-700">Tipe Transaksi <span class="text-red-500">*</span></label>
+                    {{-- ---- PASTIKAN BAGIAN INI SAMA ---- --}}
+                    <select wire:model.live="type" id="type" class="mt-1 block w-full appearance-none rounded-lg border border-slate-300 bg-white py-2.5 px-3 text-slate-800 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" required>
+                        <option value="">-- Pilih Tipe --</option>
+                        {{-- Loop berdasarkan $availableTypes --}}
+                        @php $currentGroup = ''; @endphp
+                        @foreach ($availableTypes as $value => $label)
+                            @php
+                                $group = '';
+                                if (str_starts_with($value, 'masuk_')) $group = 'Barang Masuk';
+                                elseif (str_starts_with($value, 'keluar_')) $group = 'Barang Keluar';
+                                elseif (str_starts_with($value, 'rusak_')) $group = 'Barang Rusak';
+
+                                if ($group !== $currentGroup) {
+                                    if ($currentGroup !== '') echo '</optgroup>'; // Tutup grup sebelumnya jika ada
+                                    echo '<optgroup label="' . $group . '">';
+                                    $currentGroup = $group;
+                                }
+                            @endphp
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                        @if ($currentGroup !== '') </optgroup> @endif {{-- Tutup grup terakhir --}}
+                    </select>
+                     {{-- ---------------------- --}}
+                    @error('type') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                </div>
 
                         @if($type)
                             <div>
