@@ -26,8 +26,10 @@ class ItemsExport implements FromCollection, WithHeadings, WithMapping
         return [
             'No',
             'Kode Barang',
-            'Kategori',
+            // 'Kategori', // Hapus Kategori
             'Nama Barang',
+            'Harga Beli', // Tambah Harga Beli
+            'Harga Jual', // Tambah Harga Jual
             'Kuantitas',
             'Status',
             'Tanggal Dibuat',
@@ -46,9 +48,11 @@ class ItemsExport implements FromCollection, WithHeadings, WithMapping
 
         return [
             $this->rowNumber,
-            $item->code,
-            $item->category,
+            $item->code ?? '-', // Pastikan kode ada
+            // $item->category, // Hapus Kategori
             $item->name,
+            $item->harga_beli ?? 0, // Tambah Harga Beli (tampilkan 0 jika null)
+            $item->harga_jual ?? 0, // Tambah Harga Jual (tampilkan 0 jika null)
             $item->quantity,
             $statusText,
             $item->created_at->format('Y-m-d H:i:s'),
