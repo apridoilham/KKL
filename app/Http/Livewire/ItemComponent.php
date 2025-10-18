@@ -5,6 +5,7 @@ namespace App\Http\Livewire;
 use App\Models\Item;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule; // Import Rule
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -16,7 +17,8 @@ class ItemComponent extends Component
     public string $search = '';
     public int $perPage = 10;
     public ?int $id = null;
-    public ?string $code = null, $category = null, $name = null;
+    public ?string $code = null, $name = null;
+    public $harga_beli = null, $harga_jual = null; // Tambahkan properti harga
     public bool $isModalOpen = false;
     public string $item_type = 'barang_mentah';
 
@@ -45,16 +47,15 @@ class ItemComponent extends Component
 
     public function resetInputFields(): void
     {
-        $this->reset(['id', 'code', 'category', 'name']);
+        // Hapus category, tambahkan harga
+        $this->reset(['id', 'code', 'name', 'harga_beli', 'harga_jual']);
     }
 
     public function create(): void
     {
         Gate::authorize('manage-items');
         $this->resetInputFields();
-
         $this->item_type = $this->filterType ?? 'barang_mentah';
-
         $this->isModalOpen = true;
     }
 
@@ -64,18 +65,28 @@ class ItemComponent extends Component
 
         $validatedData = $this->validate([
             'name' => 'required|string|max:255',
-            'category' => 'nullable|string|max:255',
-            'code' => 'nullable|string|max:50|unique:items,code,' . $this->id,
+            // 'category' => 'nullable|string|max:255', // Hapus validasi category
+            'code' => ['nullable','string','max:50', Rule::unique('items')->ignore($this->id)], // Gunakan Rule::unique
+            'harga_beli' => 'nullable|numeric|min:0', // Tambahkan validasi harga
+            'harga_jual' => 'nullable|numeric|min:0', // Tambahkan validasi harga
+        ], [ // Tambahkan pesan custom jika perlu
+            'harga_beli.numeric' => 'Harga beli harus berupa angka.',
+            'harga_beli.min' => 'Harga beli tidak boleh negatif.',
+            'harga_jual.numeric' => 'Harga jual harus berupa angka.',
+            'harga_jual.min' => 'Harga jual tidak boleh negatif.',
         ]);
 
         $dataToSave = $validatedData;
         $dataToSave['item_type'] = $this->item_type;
 
+        // Pastikan harga tersimpan sebagai null jika kosong, atau angka jika diisi
+        $dataToSave['harga_beli'] = !empty($this->harga_beli) ? (float)$this->harga_beli : null;
+        $dataToSave['harga_jual'] = !empty($this->harga_jual) ? (float)$this->harga_jual : null;
+
+
         if (!$this->id) {
             $dataToSave['quantity'] = 0;
-            // ---- Perubahan di sini ----
-            $dataToSave['status'] = 'out'; // Set status jadi 'out' jika quantity 0
-            // -------------------------
+            $dataToSave['status'] = 'out';
         }
 
         Item::updateOrCreate(['id' => $this->id], $dataToSave);
@@ -96,8 +107,10 @@ class ItemComponent extends Component
         $item = Item::findOrFail($id);
         $this->id = $item->id;
         $this->code = $item->code;
-        $this->category = $item->category;
+        // $this->category = $item->category; // Hapus category
         $this->name = $item->name;
+        $this->harga_beli = $item->harga_beli; // Load harga
+        $this->harga_jual = $item->harga_jual; // Load harga
         $this->item_type = $item->item_type;
         $this->isModalOpen = true;
     }
@@ -118,7 +131,7 @@ class ItemComponent extends Component
     {
         $itemsQuery = Item::query()
             ->where(fn ($query) => $query->where('code', 'like', '%' . $this->search . '%')
-                ->orWhere('category', 'like', '%' . $this->search . '%')
+                // ->orWhere('category', 'like', '%' . $this->search . '%') // Hapus pencarian category
                 ->orWhere('name', 'like', '%' . $this->search . '%'));
 
         if ($this->filterType) {

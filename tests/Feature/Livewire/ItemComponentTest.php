@@ -22,6 +22,8 @@ class ItemComponentTest extends TestCase
         parent::setUp();
         $this->admin = User::factory()->create(['role' => 'admin']);
         $this->staff = User::factory()->create(['role' => 'produksi']);
+        // Jalankan migrasi khusus untuk testing (opsional tapi baik)
+        // $this->artisan('migrate');
     }
 
     #[Test]
@@ -31,8 +33,10 @@ class ItemComponentTest extends TestCase
             ->test(ItemComponent::class)
             ->call('create')
             ->set('name', 'Laptop Baru')
-            ->set('category', 'Elektronik')
+            // ->set('category', 'Elektronik') // <-- Hapus baris ini
             ->set('code', 'LP-001')
+            ->set('harga_beli', 5000000) // Tambahkan jika perlu
+            ->set('harga_jual', 7500000) // Tambahkan jika perlu
             ->set('item_type', 'barang_jadi')
             ->call('store');
 
@@ -48,6 +52,7 @@ class ItemComponentTest extends TestCase
             ->test(ItemComponent::class)
             ->call('edit', $item->id)
             ->set('name', 'Nama Baru Diedit')
+            // Hapus set category jika ada sebelumnya
             ->call('store');
 
         $this->assertDatabaseHas('items', ['id' => $item->id, 'name' => 'Nama Baru Diedit']);

@@ -14,7 +14,8 @@ return new class extends Migration
             $table->enum('type', [
                 'masuk_mentah',
                 'masuk_jadi',
-                'keluar_terpakai',
+                'produksi_jadi',
+                'produksi_terpakai',
                 'keluar_dikirim',
                 'keluar_mentah',
                 'rusak_mentah',
@@ -22,7 +23,13 @@ return new class extends Migration
             ]);
             $table->unsignedInteger('quantity');
             $table->text('description')->nullable();
+            $table->string('nama_supplier')->nullable();
+            $table->string('nama_customer')->nullable();
+            $table->string('nomor_surat_jalan')->nullable();
+            $table->date('tanggal_surat_jalan')->nullable();
             $table->timestamps();
+            $table->index('type');
+            $table->index('created_at');
         });
     }
 

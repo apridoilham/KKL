@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -26,6 +27,11 @@ class TransactionComponent extends Component
     public bool $isModalOpen = false;
 
     public float $originalQuantity = 0;
+
+    public ?string $nama_supplier = null;
+    public ?string $nama_customer = null;
+    public ?string $nomor_surat_jalan = null;
+    public ?string $tanggal_surat_jalan = null;
 
     public string $filterDateType = 'all_time';
     public string $filterDate;
@@ -63,6 +69,9 @@ class TransactionComponent extends Component
         if (in_array($property, ['search', 'filterType', 'filterDateType', 'filterDate', 'filterMonth', 'filterYear'])) {
             $this->resetPage();
         }
+        if ($property === 'type') {
+            $this->reset(['nama_supplier', 'nama_customer', 'nomor_surat_jalan', 'tanggal_surat_jalan']);
+        }
     }
 
     private function updateFilterMonth(): void
@@ -83,6 +92,7 @@ class TransactionComponent extends Component
     public function updatedType($value): void
     {
         $this->loadItems($value);
+        $this->reset(['nama_supplier', 'nama_customer', 'nomor_surat_jalan', 'tanggal_surat_jalan']);
     }
 
     public function loadItems($type = null): void
@@ -91,7 +101,7 @@ class TransactionComponent extends Component
 
         match ($type) {
             'masuk_mentah', 'keluar_mentah', 'rusak_mentah' => $query->where('item_type', 'barang_mentah'),
-            'masuk_jadi', 'keluar_dikirim', 'rusak_jadi' => $query->where('item_type', 'barang_jadi'),
+            'masuk_jadi', 'produksi_jadi', 'keluar_dikirim', 'rusak_jadi' => $query->where('item_type', 'barang_jadi'),
             default => null,
         };
 
@@ -100,7 +110,7 @@ class TransactionComponent extends Component
 
     public function resetInputFields(): void
     {
-        $this->reset(['id', 'itemId', 'type', 'description', 'originalQuantity']);
+        $this->reset(['id', 'itemId', 'type', 'description', 'originalQuantity', 'nama_supplier', 'nama_customer', 'nomor_surat_jalan', 'tanggal_surat_jalan']);
         $this->quantity = 1;
         $this->loadItems();
     }
@@ -117,7 +127,7 @@ class TransactionComponent extends Component
         Gate::authorize('edit-transactions');
         $transaction = Transaction::findOrFail($id);
 
-        if (in_array($transaction->type, ['masuk_jadi', 'keluar_terpakai'])) {
+        if (in_array($transaction->type, ['produksi_jadi', 'produksi_terpakai'])) {
             $this->dispatch('toast', status: 'failed', message: 'Transaksi produksi tidak dapat diedit.');
             return;
         }
@@ -128,6 +138,11 @@ class TransactionComponent extends Component
         $this->quantity = $transaction->quantity;
         $this->description = $transaction->description;
         $this->originalQuantity = $transaction->quantity;
+        $this->nama_supplier = $transaction->nama_supplier;
+        $this->nama_customer = $transaction->nama_customer;
+        $this->nomor_surat_jalan = $transaction->nomor_surat_jalan;
+        $this->tanggal_surat_jalan = optional($transaction->tanggal_surat_jalan)->format('Y-m-d');
+
         $this->loadItems($transaction->type);
         $this->isModalOpen = true;
     }
@@ -140,26 +155,59 @@ class TransactionComponent extends Component
             Gate::authorize('manage-transactions');
         }
 
-        $this->validate([
+        $rules = [
             'itemId' => 'required|exists:items,id',
-            'type' => 'required|in:masuk_mentah,masuk_jadi,keluar_dikirim,keluar_mentah,rusak_mentah,rusak_jadi',
+            'type' => ['required', Rule::in(['masuk_mentah', 'masuk_jadi', 'keluar_dikirim', 'keluar_mentah', 'rusak_mentah', 'rusak_jadi'])],
             'quantity' => 'required|numeric|min:1',
-            'description' => 'nullable|string'
-        ], [
+            'description' => 'nullable|string',
+            'tanggal_surat_jalan' => 'nullable|date',
+        ];
+
+        if (in_array($this->type, ['masuk_mentah', 'masuk_jadi'])) {
+            $rules['nama_supplier'] = 'required|string|max:255';
+            $rules['nomor_surat_jalan'] = 'required|string|max:255';
+            $rules['tanggal_surat_jalan'] = 'required|date';
+        } elseif (in_array($this->type, ['keluar_dikirim', 'keluar_mentah'])) {
+            $rules['nama_customer'] = 'required|string|max:255';
+            $rules['nomor_surat_jalan'] = 'required|string|max:255';
+            $rules['tanggal_surat_jalan'] = 'required|date';
+        } else {
+             $rules['nama_supplier'] = 'nullable|string|max:255';
+             $rules['nama_customer'] = 'nullable|string|max:255';
+             $rules['nomor_surat_jalan'] = 'nullable|string|max:255';
+        }
+
+        $validatedData = $this->validate($rules, [
             'quantity.required' => 'Kuantitas tidak boleh kosong.',
             'quantity.min' => 'Kuantitas minimal harus 1.',
             'itemId.required' => 'Anda harus memilih barang.',
+            'nama_supplier.required' => 'Nama supplier wajib diisi untuk barang masuk.',
+            'nama_customer.required' => 'Nama customer wajib diisi untuk barang keluar.',
+            'nomor_surat_jalan.required' => 'Nomor surat jalan wajib diisi.',
+            'tanggal_surat_jalan.required' => 'Tanggal surat jalan wajib diisi.',
+            'tanggal_surat_jalan.date' => 'Format tanggal surat jalan tidak valid.',
         ]);
 
         try {
-            DB::transaction(function () {
+            DB::transaction(function () use ($validatedData) {
                 $stockInTypes = ['masuk_mentah', 'masuk_jadi'];
+
+                $dataToSave = [
+                    'item_id' => $validatedData['itemId'],
+                    'type' => $validatedData['type'],
+                    'quantity' => $validatedData['quantity'],
+                    'description' => $validatedData['description'] ?? null,
+                    'nama_supplier' => $validatedData['nama_supplier'] ?? null,
+                    'nama_customer' => $validatedData['nama_customer'] ?? null,
+                    'nomor_surat_jalan' => $validatedData['nomor_surat_jalan'] ?? null,
+                    'tanggal_surat_jalan' => $validatedData['tanggal_surat_jalan'] ?? null,
+                ];
 
                 if ($this->id) {
                     $transaction = Transaction::findOrFail($this->id);
                     $oldItem = $transaction->item;
-
-                    if (in_array($transaction->type, $stockInTypes)) {
+                    $oldStockInTypes = ['masuk_mentah', 'masuk_jadi', 'produksi_jadi'];
+                    if (in_array($transaction->type, $oldStockInTypes)) {
                         $oldItem->decreaseStock($this->originalQuantity);
                     } else {
                         $oldItem->increaseStock($this->originalQuantity);
@@ -172,12 +220,7 @@ class TransactionComponent extends Component
                         $newItem->decreaseStock($this->quantity);
                     }
 
-                    $transaction->update([
-                        'item_id' => $this->itemId,
-                        'type' => $this->type,
-                        'quantity' => $this->quantity,
-                        'description' => $this->description,
-                    ]);
+                    $transaction->update($dataToSave);
                 } else {
                     $item = Item::findOrFail($this->itemId);
                     if (in_array($this->type, $stockInTypes)) {
@@ -185,12 +228,7 @@ class TransactionComponent extends Component
                     } else {
                         $item->decreaseStock($this->quantity);
                     }
-                    Transaction::create([
-                        'item_id' => $this->itemId,
-                        'type' => $this->type,
-                        'quantity' => $this->quantity,
-                        'description' => $this->description,
-                    ]);
+                    Transaction::create($dataToSave);
                 }
             });
 
@@ -209,7 +247,7 @@ class TransactionComponent extends Component
         Gate::authorize('manage-transactions');
         $transaction = Transaction::findOrFail($id);
 
-        if (in_array($transaction->type, ['masuk_jadi', 'keluar_terpakai'])) {
+        if (in_array($transaction->type, ['produksi_jadi', 'produksi_terpakai'])) {
             $this->dispatch('toast', status: 'failed', message: 'Transaksi produksi tidak dapat dihapus manual.');
             return;
         }
@@ -225,7 +263,8 @@ class TransactionComponent extends Component
         try {
             DB::transaction(function () use ($transaction) {
                 $item = $transaction->item;
-                if (in_array($transaction->type, ['masuk_mentah', 'masuk_jadi'])) {
+                $stockInTypesToDelete = ['masuk_mentah', 'masuk_jadi', 'produksi_jadi'];
+                if (in_array($transaction->type, $stockInTypesToDelete)) {
                     $item->decreaseStock($transaction->quantity);
                 } else {
                     $item->increaseStock($transaction->quantity);
@@ -245,9 +284,11 @@ class TransactionComponent extends Component
         $transactionsQuery = Transaction::with('item')
             ->where(function ($query) {
                 $query->whereHas('item', function ($subQuery) {
-                    $subQuery->where('name', 'like', '%' . $this->search . '%')
-                        ->orWhere('category', 'like', '%' . $this->search . '%');
-                })->orWhere('description', 'like', '%' . $this->search . '%');
+                    $subQuery->where('name', 'like', '%' . $this->search . '%');
+                })->orWhere('description', 'like', '%' . $this->search . '%')
+                  ->orWhere('nama_supplier', 'like', '%' . $this->search . '%')
+                  ->orWhere('nama_customer', 'like', '%' . $this->search . '%')
+                  ->orWhere('nomor_surat_jalan', 'like', '%' . $this->search . '%');
             })
             ->when($this->filterType !== 'all', function ($query) {
                 $query->where('type', $this->filterType);
@@ -259,8 +300,12 @@ class TransactionComponent extends Component
                     $transactionsQuery->whereDate('created_at', $this->filterDate);
                     break;
                 case 'monthly':
-                    $date = Carbon::parse($this->filterMonth);
-                    $transactionsQuery->whereYear('created_at', $date->year)->whereMonth('created_at', $date->month);
+                    try {
+                        $date = Carbon::parse($this->filterMonth);
+                        $transactionsQuery->whereYear('created_at', $date->year)->whereMonth('created_at', $date->month);
+                    } catch (\Exception $e) {
+                        //
+                    }
                     break;
                 case 'yearly':
                     $transactionsQuery->whereYear('created_at', $this->filterYear);

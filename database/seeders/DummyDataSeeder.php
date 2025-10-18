@@ -7,7 +7,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Collection; // Pastikan ini di-import
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -29,7 +29,7 @@ class DummyDataSeeder extends Seeder
         $rawMaterials = $this->createRawMaterialsAndTransactions();
 
         $this->command->info('Membuat data barang jadi dan resep (BOM)...');
-        $this->createFinishedGoodsAndBom($rawMaterials); // <- Ganti nama parameter jika berbeda
+        $this->createFinishedGoodsAndBom($rawMaterials);
 
         $this->command->info('Proses seeding data dummy selesai!');
     }
@@ -41,74 +41,100 @@ class DummyDataSeeder extends Seeder
         User::create(['name' => 'Staff Pengiriman', 'username' => 'pengiriman', 'password' => Hash::make('password'), 'role' => 'pengiriman', 'security_question' => 'Kota kelahiran?', 'security_answer' => Hash::make('pengiriman'),]);
     }
 
-    private function createRawMaterialsAndTransactions(): Collection // <- Pastikan return type Collection
+    // ---- Perubahan Mulai Disini ----
+    private function createRawMaterialsAndTransactions(): Collection
     {
+        // Ubah struktur data, category tidak lagi jadi key utama
         $rawItemsData = [
-            'Bahan Kue' => ['Tepung Terigu', 'Gula Pasir', 'Telur Ayam', 'Mentega'],
-            'Elektronik' => ['CPU Intel i7', 'RAM 16GB DDR4', 'SSD 1TB NVMe', 'Casing PC ATX'],
+            ['category_hint' => 'Bahan Kue', 'name' => 'Tepung Terigu', 'harga_beli' => 10000],
+            ['category_hint' => 'Bahan Kue', 'name' => 'Gula Pasir', 'harga_beli' => 12000],
+            ['category_hint' => 'Bahan Kue', 'name' => 'Telur Ayam', 'harga_beli' => 2000],
+            ['category_hint' => 'Bahan Kue', 'name' => 'Mentega', 'harga_beli' => 15000],
+            ['category_hint' => 'Elektronik', 'name' => 'CPU Intel i7', 'harga_beli' => 4500000],
+            ['category_hint' => 'Elektronik', 'name' => 'RAM 16GB DDR4', 'harga_beli' => 800000],
+            ['category_hint' => 'Elektronik', 'name' => 'SSD 1TB NVMe', 'harga_beli' => 1200000],
+            ['category_hint' => 'Elektronik', 'name' => 'Casing PC ATX', 'harga_beli' => 500000],
         ];
 
         $createdItems = collect();
 
-        foreach ($rawItemsData as $category => $items) {
-            foreach ($items as $itemName) {
-                $item = Item::create([
-                    'name' => $itemName,
-                    'category' => $category,
-                    'item_type' => 'barang_mentah',
-                    'code' => strtoupper(substr($category, 0, 3)) . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT),
-                    'quantity' => 0,
-                    'status' => 'out', // Awalnya out
-                    'created_at' => now()->subMonths(rand(1, 6)),
-                ]);
+        foreach ($rawItemsData as $itemData) {
+            $item = Item::create([
+                'name' => $itemData['name'],
+                // 'category' => $category, // <-- Hapus baris ini
+                'item_type' => 'barang_mentah',
+                'code' => strtoupper(substr($itemData['category_hint'], 0, 3)) . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT),
+                'harga_beli' => $itemData['harga_beli'] ?? 0, // Ambil harga beli
+                'quantity' => 0,
+                'status' => 'out', // Awalnya out
+                'created_at' => now()->subMonths(rand(1, 6)),
+            ]);
 
-                $initialStock = rand(500, 1000);
-                $item->increaseStock($initialStock); // Status jadi available
-                Transaction::create([
-                    'item_id' => $item->id,
-                    'type' => 'masuk_mentah',
-                    'quantity' => $initialStock,
-                    'description' => 'Stok awal dari pemasok',
-                    'created_at' => $item->created_at->addDay(),
-                ]);
-                $createdItems->push($item);
-            }
+            $initialStock = rand(500, 1000);
+            $item->increaseStock($initialStock); // Status jadi available
+            Transaction::create([
+                'item_id' => $item->id,
+                'type' => 'masuk_mentah',
+                'quantity' => $initialStock,
+                'description' => 'Stok awal dari pemasok',
+                'nama_supplier' => 'Supplier Dummy ' . $itemData['category_hint'], // Contoh data supplier
+                'nomor_surat_jalan' => 'SJ-DUMMY-' . rand(100, 999), // Contoh data SJ
+                'tanggal_surat_jalan' => $item->created_at->addDay()->format('Y-m-d'), // Contoh data tgl SJ
+                'created_at' => $item->created_at->addDay(),
+            ]);
+            $createdItems->push($item);
         }
         return $createdItems;
     }
+    // ---- Perubahan Selesai Disini ----
 
-    // ---- Perubahan Mulai Disini ----
-    private function createFinishedGoodsAndBom(Collection $rawMaterials): void // <- Pastikan tipe parameter Collection
+    private function createFinishedGoodsAndBom(Collection $rawMaterials): void
     {
         $kue = Item::create([
             'name' => 'Kue Bolu',
-            'category' => 'Makanan Jadi',
             'item_type' => 'barang_jadi',
             'code' => 'PROD-KUE01',
-            'quantity' => 0,      // Tambahkan quantity
-            'status' => 'out'       // Tambahkan status 'out' karena quantity 0
+            'harga_jual' => 50000, // Contoh harga jual
+            'quantity' => 0,
+            'status' => 'out'
         ]);
-        $kue->bomRawMaterials()->attach([
-            $rawMaterials->firstWhere('name', 'Tepung Terigu')->id => ['quantity_required' => 2],
-            $rawMaterials->firstWhere('name', 'Gula Pasir')->id => ['quantity_required' => 1],
-            $rawMaterials->firstWhere('name', 'Telur Ayam')->id => ['quantity_required' => 4],
-            $rawMaterials->firstWhere('name', 'Mentega')->id => ['quantity_required' => 1],
-        ]);
+        // Pastikan item ditemukan sebelum attach
+        $tepung = $rawMaterials->firstWhere('name', 'Tepung Terigu');
+        $gula = $rawMaterials->firstWhere('name', 'Gula Pasir');
+        $telur = $rawMaterials->firstWhere('name', 'Telur Ayam');
+        $mentega = $rawMaterials->firstWhere('name', 'Mentega');
+
+        if($tepung && $gula && $telur && $mentega) {
+             $kue->bomRawMaterials()->attach([
+                $tepung->id => ['quantity_required' => 2],
+                $gula->id => ['quantity_required' => 1],
+                $telur->id => ['quantity_required' => 4],
+                $mentega->id => ['quantity_required' => 1],
+            ]);
+        }
+
 
         $komputer = Item::create([
             'name' => 'PC Gaming Rakitan',
-            'category' => 'Elektronik Jadi',
             'item_type' => 'barang_jadi',
             'code' => 'PROD-PC01',
-            'quantity' => 0,      // Tambahkan quantity
-            'status' => 'out'       // Tambahkan status 'out' karena quantity 0
+            'harga_jual' => 15000000, // Contoh harga jual
+            'quantity' => 0,
+            'status' => 'out'
         ]);
-        $komputer->bomRawMaterials()->attach([
-            $rawMaterials->firstWhere('name', 'CPU Intel i7')->id => ['quantity_required' => 1],
-            $rawMaterials->firstWhere('name', 'RAM 16GB DDR4')->id => ['quantity_required' => 2],
-            $rawMaterials->firstWhere('name', 'SSD 1TB NVMe')->id => ['quantity_required' => 1],
-            $rawMaterials->firstWhere('name', 'Casing PC ATX')->id => ['quantity_required' => 1],
-        ]);
+        // Pastikan item ditemukan sebelum attach
+        $cpu = $rawMaterials->firstWhere('name', 'CPU Intel i7');
+        $ram = $rawMaterials->firstWhere('name', 'RAM 16GB DDR4');
+        $ssd = $rawMaterials->firstWhere('name', 'SSD 1TB NVMe');
+        $casing = $rawMaterials->firstWhere('name', 'Casing PC ATX');
+
+        if($cpu && $ram && $ssd && $casing){
+            $komputer->bomRawMaterials()->attach([
+                $cpu->id => ['quantity_required' => 1],
+                $ram->id => ['quantity_required' => 2],
+                $ssd->id => ['quantity_required' => 1],
+                $casing->id => ['quantity_required' => 1],
+            ]);
+        }
     }
-    // ---- Perubahan Selesai Disini ----
 }

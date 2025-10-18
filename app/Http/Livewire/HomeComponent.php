@@ -88,19 +88,21 @@ class HomeComponent extends Component
                 SUM(CASE WHEN item_type = 'barang_jadi' THEN quantity ELSE 0 END) as total_finished_stock
             ")->first();
 
+            // ---- Perubahan Query Raw Transaksi ----
             $transactionCounts = $this->applyTimeFilter(Transaction::query())
                 ->selectRaw("
-                    SUM(CASE WHEN type IN ('masuk_mentah', 'masuk_jadi') THEN quantity ELSE 0 END) as total_in,
+                    SUM(CASE WHEN type IN ('masuk_mentah', 'produksi_jadi') THEN quantity ELSE 0 END) as total_in,
                     SUM(CASE WHEN type = 'masuk_mentah' THEN quantity ELSE 0 END) as total_in_raw,
-                    SUM(CASE WHEN type = 'masuk_jadi' THEN quantity ELSE 0 END) as total_in_finished,
-                    SUM(CASE WHEN type IN ('keluar_dikirim', 'keluar_terpakai', 'keluar_mentah') THEN quantity ELSE 0 END) as total_out,
-                    SUM(CASE WHEN type = 'keluar_terpakai' THEN quantity ELSE 0 END) as total_out_used,
+                    SUM(CASE WHEN type = 'produksi_jadi' THEN quantity ELSE 0 END) as total_in_finished,
+                    SUM(CASE WHEN type IN ('keluar_dikirim', 'produksi_terpakai', 'keluar_mentah') THEN quantity ELSE 0 END) as total_out,
+                    SUM(CASE WHEN type = 'produksi_terpakai' THEN quantity ELSE 0 END) as total_out_used,
                     SUM(CASE WHEN type = 'keluar_mentah' THEN quantity ELSE 0 END) as total_out_shipped_raw,
                     SUM(CASE WHEN type = 'keluar_dikirim' THEN quantity ELSE 0 END) as total_out_shipped_finished,
                     SUM(CASE WHEN type IN ('rusak_mentah', 'rusak_jadi') THEN quantity ELSE 0 END) as total_damaged,
                     SUM(CASE WHEN type = 'rusak_mentah' THEN quantity ELSE 0 END) as total_damaged_raw,
                     SUM(CASE WHEN type = 'rusak_jadi' THEN quantity ELSE 0 END) as total_damaged_finished
                 ")->first();
+            // ------------------------------------
 
             $userCountsByRole = User::query()
                 ->select('role', DB::raw('count(*) as total'))
@@ -112,22 +114,22 @@ class HomeComponent extends Component
                 'totalAdmin' => (int) ($userCountsByRole['admin'] ?? 0),
                 'totalProduksi' => (int) ($userCountsByRole['produksi'] ?? 0),
                 'totalPengiriman' => (int) ($userCountsByRole['pengiriman'] ?? 0),
-                'totalItems' => (int) $itemCounts->total_items,
-                'totalRawItems' => (int) $itemCounts->total_raw_items,
-                'totalFinishedItems' => (int) $itemCounts->total_finished_items,
-                'totalStock' => (int) $itemCounts->total_stock,
-                'totalRawStock' => (int) $itemCounts->total_raw_stock,
-                'totalFinishedStock' => (int) $itemCounts->total_finished_stock,
-                'totalIn' => (int) $transactionCounts->total_in,
-                'totalInRaw' => (int) $transactionCounts->total_in_raw,
-                'totalInFinished' => (int) $transactionCounts->total_in_finished,
-                'totalOut' => (int) $transactionCounts->total_out,
-                'totalOutUsed' => (int) $transactionCounts->total_out_used,
-                'totalOutShippedRaw' => (int) $transactionCounts->total_out_shipped_raw,
-                'totalOutShippedFinished' => (int) $transactionCounts->total_out_shipped_finished,
-                'totalDamaged' => (int) $transactionCounts->total_damaged,
-                'totalDamagedRaw' => (int) $transactionCounts->total_damaged_raw,
-                'totalDamagedFinished' => (int) $transactionCounts->total_damaged_finished,
+                'totalItems' => (int) ($itemCounts->total_items ?? 0), // Tambah null safety
+                'totalRawItems' => (int) ($itemCounts->total_raw_items ?? 0),
+                'totalFinishedItems' => (int) ($itemCounts->total_finished_items ?? 0),
+                'totalStock' => (int) ($itemCounts->total_stock ?? 0),
+                'totalRawStock' => (int) ($itemCounts->total_raw_stock ?? 0),
+                'totalFinishedStock' => (int) ($itemCounts->total_finished_stock ?? 0),
+                'totalIn' => (int) ($transactionCounts->total_in ?? 0), // Tambah null safety
+                'totalInRaw' => (int) ($transactionCounts->total_in_raw ?? 0),
+                'totalInFinished' => (int) ($transactionCounts->total_in_finished ?? 0),
+                'totalOut' => (int) ($transactionCounts->total_out ?? 0),
+                'totalOutUsed' => (int) ($transactionCounts->total_out_used ?? 0),
+                'totalOutShippedRaw' => (int) ($transactionCounts->total_out_shipped_raw ?? 0),
+                'totalOutShippedFinished' => (int) ($transactionCounts->total_out_shipped_finished ?? 0),
+                'totalDamaged' => (int) ($transactionCounts->total_damaged ?? 0),
+                'totalDamagedRaw' => (int) ($transactionCounts->total_damaged_raw ?? 0),
+                'totalDamagedFinished' => (int) ($transactionCounts->total_damaged_finished ?? 0),
             ];
         });
 
