@@ -7,6 +7,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection; // Pastikan ini di-import
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -28,7 +29,7 @@ class DummyDataSeeder extends Seeder
         $rawMaterials = $this->createRawMaterialsAndTransactions();
 
         $this->command->info('Membuat data barang jadi dan resep (BOM)...');
-        $this->createFinishedGoodsAndBom($rawMaterials);
+        $this->createFinishedGoodsAndBom($rawMaterials); // <- Ganti nama parameter jika berbeda
 
         $this->command->info('Proses seeding data dummy selesai!');
     }
@@ -40,7 +41,7 @@ class DummyDataSeeder extends Seeder
         User::create(['name' => 'Staff Pengiriman', 'username' => 'pengiriman', 'password' => Hash::make('password'), 'role' => 'pengiriman', 'security_question' => 'Kota kelahiran?', 'security_answer' => Hash::make('pengiriman'),]);
     }
 
-    private function createRawMaterialsAndTransactions(): \Illuminate\Support\Collection
+    private function createRawMaterialsAndTransactions(): Collection // <- Pastikan return type Collection
     {
         $rawItemsData = [
             'Bahan Kue' => ['Tepung Terigu', 'Gula Pasir', 'Telur Ayam', 'Mentega'],
@@ -57,12 +58,12 @@ class DummyDataSeeder extends Seeder
                     'item_type' => 'barang_mentah',
                     'code' => strtoupper(substr($category, 0, 3)) . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT),
                     'quantity' => 0,
-                    'status' => 'out',
+                    'status' => 'out', // Awalnya out
                     'created_at' => now()->subMonths(rand(1, 6)),
                 ]);
 
                 $initialStock = rand(500, 1000);
-                $item->increaseStock($initialStock);
+                $item->increaseStock($initialStock); // Status jadi available
                 Transaction::create([
                     'item_id' => $item->id,
                     'type' => 'masuk_mentah',
@@ -76,9 +77,17 @@ class DummyDataSeeder extends Seeder
         return $createdItems;
     }
 
-    private function createFinishedGoodsAndBom(\Illuminate\Support\Collection $rawMaterials): void
+    // ---- Perubahan Mulai Disini ----
+    private function createFinishedGoodsAndBom(Collection $rawMaterials): void // <- Pastikan tipe parameter Collection
     {
-        $kue = Item::create(['name' => 'Kue Bolu', 'category' => 'Makanan Jadi', 'item_type' => 'barang_jadi', 'code' => 'PROD-KUE01']);
+        $kue = Item::create([
+            'name' => 'Kue Bolu',
+            'category' => 'Makanan Jadi',
+            'item_type' => 'barang_jadi',
+            'code' => 'PROD-KUE01',
+            'quantity' => 0,      // Tambahkan quantity
+            'status' => 'out'       // Tambahkan status 'out' karena quantity 0
+        ]);
         $kue->bomRawMaterials()->attach([
             $rawMaterials->firstWhere('name', 'Tepung Terigu')->id => ['quantity_required' => 2],
             $rawMaterials->firstWhere('name', 'Gula Pasir')->id => ['quantity_required' => 1],
@@ -86,7 +95,14 @@ class DummyDataSeeder extends Seeder
             $rawMaterials->firstWhere('name', 'Mentega')->id => ['quantity_required' => 1],
         ]);
 
-        $komputer = Item::create(['name' => 'PC Gaming Rakitan', 'category' => 'Elektronik Jadi', 'item_type' => 'barang_jadi', 'code' => 'PROD-PC01']);
+        $komputer = Item::create([
+            'name' => 'PC Gaming Rakitan',
+            'category' => 'Elektronik Jadi',
+            'item_type' => 'barang_jadi',
+            'code' => 'PROD-PC01',
+            'quantity' => 0,      // Tambahkan quantity
+            'status' => 'out'       // Tambahkan status 'out' karena quantity 0
+        ]);
         $komputer->bomRawMaterials()->attach([
             $rawMaterials->firstWhere('name', 'CPU Intel i7')->id => ['quantity_required' => 1],
             $rawMaterials->firstWhere('name', 'RAM 16GB DDR4')->id => ['quantity_required' => 2],
@@ -94,4 +110,5 @@ class DummyDataSeeder extends Seeder
             $rawMaterials->firstWhere('name', 'Casing PC ATX')->id => ['quantity_required' => 1],
         ]);
     }
+    // ---- Perubahan Selesai Disini ----
 }

@@ -73,7 +73,9 @@ class ItemComponent extends Component
 
         if (!$this->id) {
             $dataToSave['quantity'] = 0;
-            $dataToSave['status'] = 'available';
+            // ---- Perubahan di sini ----
+            $dataToSave['status'] = 'out'; // Set status jadi 'out' jika quantity 0
+            // -------------------------
         }
 
         Item::updateOrCreate(['id' => $this->id], $dataToSave);
