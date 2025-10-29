@@ -34,10 +34,9 @@
                         <th scope="col" class="px-6 py-4 font-medium">#</th>
                         <th scope="col" class="px-6 py-4 font-medium">Kode</th>
                         <th scope="col" class="px-6 py-4 font-medium">Nama</th>
-                        {{-- <th scope="col" class="px-6 py-4 font-medium">Kategori</th> --}} {{-- Hapus Kategori --}}
                         <th scope="col" class="px-6 py-4 font-medium">Tipe</th>
-                        <th scope="col" class="px-6 py-4 font-medium text-right">Harga Beli</th> {{-- Tambah Harga Beli --}}
-                        <th scope="col" class="px-6 py-4 font-medium text-right">Harga Jual</th> {{-- Tambah Harga Jual --}}
+                        <th scope="col" class="px-6 py-4 font-medium text-right">Harga Beli</th>
+                        <th scope="col" class="px-6 py-4 font-medium text-right">Harga Jual</th>
                         <th scope="col" class="px-6 py-4 font-medium text-center">Kuantitas</th>
                         <th scope="col" class="px-6 py-4 font-medium">Status</th>
                         <th scope="col" class="px-6 py-4 font-medium">Tgl. Input</th>
@@ -52,20 +51,17 @@
                             <td class="px-6 py-4 text-slate-500">{{ $items->firstItem() + $index }}</td>
                             <td class="px-6 py-4 font-mono text-slate-500">{{ $item->code ?: '-' }}</td>
                             <td class="px-6 py-4 font-semibold text-slate-800">{{ $item->name }}</td>
-                            {{-- <td class="px-6 py-4">{{ $item->category ?: '-' }}</td> --}} {{-- Hapus Kategori --}}
                             <td class="px-6 py-4">
                                 <span class="rounded px-2 py-1 text-xs font-medium {{ $item->item_type == 'barang_jadi' ? 'bg-cyan-50 text-cyan-700' : 'bg-slate-100 text-slate-600' }}">
                                     {{ $item->item_type == 'barang_jadi' ? 'Barang Jadi' : 'Bahan Mentah' }}
                                 </span>
                             </td>
-                            {{-- Tambah Harga Beli & Jual --}}
                             <td class="px-6 py-4 text-right font-mono text-sm text-slate-600">
                                 {{ $item->harga_beli ? 'Rp ' . number_format($item->harga_beli, 0, ',', '.') : '-' }}
                             </td>
                              <td class="px-6 py-4 text-right font-mono text-sm text-slate-600">
                                 {{ $item->harga_jual ? 'Rp ' . number_format($item->harga_jual, 0, ',', '.') : '-' }}
                             </td>
-                            {{-- Akhir Tambah Harga --}}
                             <td class="px-6 py-4 text-center font-extrabold text-xl text-slate-700">{{ floatval($item->quantity) }}</td>
                             <td class="px-6 py-4"><span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $item->status == 'available' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}"><span class="mr-2 h-2 w-2 rounded-full {{ $item->status == 'available' ? 'bg-green-500' : 'bg-red-500' }}"></span>{{ $item->status == 'available' ? 'Tersedia' : 'Habis' }}</span></td>
                             <td class="px-6 py-4">{{ $item->created_at->format('d M Y, H:i') }}</td>
@@ -80,7 +76,6 @@
                         </tr>
                     @empty
                         <tr>
-                             {{-- Sesuaikan colspan --}}
                             <td colspan="{{ Gate::check('manage-items') ? '10' : '9' }}" class="px-4 py-16 text-center">
                                 <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
                                 <h3 class="mt-2 text-lg font-semibold text-slate-800">Item Tidak Ditemukan</h3>
@@ -111,12 +106,12 @@
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <i class="fas fa-tag text-slate-400"></i>
                                 </div>
-                                <input wire:model="name" id="name" type="text" placeholder="cth: Tepung Terigu" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" required>
+                                {{-- ---- Perubahan Placeholder ---- --}}
+                                <input wire:model="name" id="name" type="text" placeholder="cth: Kardus Box 30x20x10" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" required>
+                                {{-- ----------------------------- --}}
                             </div>
                             @error('name') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
                         </div>
-
-                        {{-- Input Kategori Dihapus --}}
 
                         <div>
                             <label for="code" class="text-sm font-medium text-slate-700">Kode Item</label>
@@ -124,7 +119,9 @@
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <i class="fas fa-barcode text-slate-400"></i>
                                 </div>
-                                <input wire:model="code" type="text" id="code" placeholder="cth: TPG-001 (Unique)" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                {{-- ---- Perubahan Placeholder ---- --}}
+                                <input wire:model="code" type="text" id="code" placeholder="cth: KB-302010 (Unique)" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                {{-- ----------------------------- --}}
                             </div>
                             @error('code') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
                         </div>
