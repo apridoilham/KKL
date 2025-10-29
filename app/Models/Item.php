@@ -14,20 +14,20 @@ class Item extends Model
 
     protected $fillable = [
         'code',
-        // 'category', // Hapus category
         'name',
         'item_type',
-        'harga_beli', // Tambahkan harga_beli
-        'harga_jual', // Tambahkan harga_jual
+        'harga_beli',
+        'harga_jual',
         'quantity',
+        'stok_minimum',
         'status',
     ];
 
-    // Tambahkan casts untuk memastikan harga dianggap angka desimal
     protected $casts = [
         'harga_beli' => 'decimal:2',
         'harga_jual' => 'decimal:2',
-        'quantity' => 'integer', // Pastikan quantity integer
+        'quantity' => 'integer',
+        'stok_minimum' => 'integer',
     ];
 
     public function transactions(): HasMany
@@ -58,7 +58,6 @@ class Item extends Model
             throw new Exception('Jumlah untuk mengurangi stok harus positif.');
         }
         if ($this->quantity < $amount) {
-            // Berikan nama item dalam pesan error
             throw new Exception('Stok '. $this->name .' tidak mencukupi (Butuh: '.$amount.', Tersedia: '.$this->quantity.').');
         }
         $this->quantity -= $amount;

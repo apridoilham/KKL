@@ -5,16 +5,16 @@
         <p class="mt-1 text-slate-500">Selamat datang kembali, berikut ringkasan inventaris Anda.</p>
     </div>
 
-    <div 
-        x-data="{ 
-            open: false, 
+    <div
+        x-data="{
+            open: false,
             activeFilter: '{{ $filterType }}',
             dateValue: '{{ $filterDate }}',
             monthValue: '{{ \Carbon\Carbon::parse($filterMonth)->format('Y-m') }}',
             yearValue: '{{ $filterYear }}',
             selectedMonth: '{{ \Carbon\Carbon::parse($filterMonth)->format('m') }}',
             selectedYearForMonth: '{{ \Carbon\Carbon::parse($filterMonth)->format('Y') }}',
-        }" 
+        }"
         x-init="$watch('selectedMonth', () => { monthValue = selectedYearForMonth + '-' + selectedMonth }); $watch('selectedYearForMonth', () => { monthValue = selectedYearForMonth + '-' + selectedMonth })"
         class="mb-6"
     >
@@ -23,7 +23,7 @@
                 <div class="flex items-center gap-x-3">
                     <i class="fas fa-calendar-alt text-slate-400"></i>
                     <div>
-                        <p class="text-xs text-slate-500">Filter Waktu</p>
+                        <p class="text-xs text-slate-500">Filter Waktu Transaksi</p>
                         <p class="font-semibold text-slate-800">
                             @if($filterType == 'daily')
                                 {{ \Carbon\Carbon::parse($filterDate)->format('d F Y') }}
@@ -40,9 +40,9 @@
                 <i class="fas fa-chevron-down text-slate-400 transition-transform" :class="{ 'rotate-180': open }"></i>
             </button>
 
-            <div 
-                x-show="open" 
-                @click.away="open = false" 
+            <div
+                x-show="open"
+                @click.away="open = false"
                 x-transition
                 class="absolute top-full z-10 mt-2 w-full max-w-sm rounded-xl border border-slate-200 bg-white p-4 shadow-lg"
                 style="display: none;"
@@ -72,7 +72,7 @@
                     <div x-show="activeFilter === 'yearly'"><input x-model="yearValue" type="number" class="w-full rounded-lg border-slate-300 py-2 px-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500" placeholder="Tahun..."></div>
                 </div>
 
-                <button 
+                <button
                     @click="if (activeFilter !== 'all_time') { $wire.applyDashboardFilter(activeFilter, dateValue, monthValue, yearValue) }; open = false"
                     type="button"
                     class="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
@@ -83,14 +83,37 @@
             </div>
         </div>
     </div>
-    
+
+    @if($lowStockItems->isNotEmpty())
+    <div class="mb-6 rounded-2xl border-2 border-yellow-300 bg-yellow-50 p-6">
+        <div class="flex items-center mb-4">
+            <i class="fas fa-exclamation-triangle text-yellow-500 fa-lg mr-3"></i>
+            <h2 class="text-xl font-bold text-yellow-800">Notifikasi Stok Rendah</h2>
+        </div>
+        <p class="text-sm text-yellow-700 mb-4">Barang berikut berada di bawah batas stok minimum dan perlu segera di-restock:</p>
+        <ul class="divide-y divide-yellow-200 max-h-48 overflow-y-auto pr-2">
+            @foreach($lowStockItems as $item)
+            <li class="py-2.5 flex justify-between items-center">
+                <div>
+                    <span class="font-semibold text-slate-800">{{ $item->name }}</span>
+                    <span class="text-xs text-slate-500 ml-2">({{ $item->item_type == 'barang_mentah' ? 'Bahan Mentah' : 'Barang Jadi' }})</span>
+                </div>
+                <div class="text-right">
+                    <span class="font-bold text-red-600 text-lg">{{ floatval($item->quantity) }}</span>
+                    <span class="text-xs text-slate-500">/ min. {{ floatval($item->stok_minimum) }}</span>
+                </div>
+            </li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
     <div class="relative">
         <div wire:loading.flex wire:target="updateStatistics, resetFilters, applyDashboardFilter" class="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/80 backdrop-blur-sm">
             <i class="fas fa-spinner fa-spin text-amber-500 text-3xl"></i>
         </div>
 
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            
             <div class="group h-[116px]" style="perspective: 1000px">
                 <div x-data="{ flipped: false }" @click="flipped = !flipped" class="relative h-full w-full cursor-pointer transition-transform duration-500" style="transform-style: preserve-3d;" :class="{ '[transform:rotateY(180deg)]': flipped }">
                     <div class="absolute h-full w-full rounded-2xl border border-slate-200 bg-white p-6" style="backface-visibility: hidden;">

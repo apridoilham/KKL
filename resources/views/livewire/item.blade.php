@@ -38,6 +38,7 @@
                         <th scope="col" class="px-6 py-4 font-medium text-right">Harga Beli</th>
                         <th scope="col" class="px-6 py-4 font-medium text-right">Harga Jual</th>
                         <th scope="col" class="px-6 py-4 font-medium text-center">Kuantitas</th>
+                        <th scope="col" class="px-6 py-4 font-medium text-center">Stok Min.</th>
                         <th scope="col" class="px-6 py-4 font-medium">Status</th>
                         <th scope="col" class="px-6 py-4 font-medium">Tgl. Input</th>
                         @can('manage-items')
@@ -63,7 +64,28 @@
                                 {{ $item->harga_jual ? 'Rp ' . number_format($item->harga_jual, 0, ',', '.') : '-' }}
                             </td>
                             <td class="px-6 py-4 text-center font-extrabold text-xl text-slate-700">{{ floatval($item->quantity) }}</td>
-                            <td class="px-6 py-4"><span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $item->status == 'available' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}"><span class="mr-2 h-2 w-2 rounded-full {{ $item->status == 'available' ? 'bg-green-500' : 'bg-red-500' }}"></span>{{ $item->status == 'available' ? 'Tersedia' : 'Habis' }}</span></td>
+                            <td class="px-6 py-4 text-center font-medium text-sm text-slate-500">{{ floatval($item->stok_minimum) }}</td>
+                            <td class="px-6 py-4">
+                                @php
+                                    $statusClass = 'bg-green-100 text-green-800';
+                                    $statusText = 'Tersedia';
+                                    $statusDot = 'bg-green-500';
+
+                                    if ($item->status == 'out') {
+                                        $statusClass = 'bg-red-100 text-red-800';
+                                        $statusText = 'Habis';
+                                        $statusDot = 'bg-red-500';
+                                    } elseif ($item->stok_minimum > 0 && $item->quantity < $item->stok_minimum && $item->status == 'available') {
+                                        $statusClass = 'bg-yellow-100 text-yellow-800';
+                                        $statusText = 'Perlu Restock';
+                                        $statusDot = 'bg-yellow-500';
+                                    }
+                                @endphp
+                                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $statusClass }}">
+                                    <span class="mr-2 h-2 w-2 rounded-full {{ $statusDot }}"></span>
+                                    {{ $statusText }}
+                                </span>
+                            </td>
                             <td class="px-6 py-4">{{ $item->created_at->format('d M Y, H:i') }}</td>
                             @can('manage-items')
                             <td class="px-6 py-4 text-center">
@@ -76,7 +98,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ Gate::check('manage-items') ? '10' : '9' }}" class="px-4 py-16 text-center">
+                            <td colspan="{{ Gate::check('manage-items') ? '11' : '10' }}" class="px-4 py-16 text-center">
                                 <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
                                 <h3 class="mt-2 text-lg font-semibold text-slate-800">Item Tidak Ditemukan</h3>
                                 <p class="mt-1 text-sm text-slate-500">Tidak ada data yang cocok dengan pencarian Anda.</p>
@@ -99,31 +121,39 @@
                         <h3 class="flex items-center text-xl font-bold text-slate-800"><i class="fas {{ $id ? 'fa-pencil-alt' : 'fa-plus-circle' }} mr-3 text-slate-400"></i><span>{{ $id ? 'Ubah' : 'Tambah' }} {{ $item_type == 'barang_jadi' ? 'Barang Jadi' : 'Bahan Mentah' }}</span></h3>
                         <button type="button" @click="show = false" class="text-3xl text-slate-400 hover:text-slate-600">&times;</button>
                     </div>
-                    <div class="space-y-6 p-8">
+                    <div class="space-y-6 p-8 max-h-[70vh] overflow-y-auto">
                         <div>
                             <label for="name" class="text-sm font-medium text-slate-700">Nama Item <span class="text-red-500">*</span></label>
                             <div class="relative mt-1">
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <i class="fas fa-tag text-slate-400"></i>
                                 </div>
-                                {{-- ---- Perubahan Placeholder ---- --}}
                                 <input wire:model="name" id="name" type="text" placeholder="cth: Kardus Box 30x20x10" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500" required>
-                                {{-- ----------------------------- --}}
                             </div>
                             @error('name') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
                         </div>
 
-                        <div>
-                            <label for="code" class="text-sm font-medium text-slate-700">Kode Item</label>
-                            <div class="relative mt-1">
-                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <i class="fas fa-barcode text-slate-400"></i>
+                        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <div>
+                                <label for="code" class="text-sm font-medium text-slate-700">Kode Item</label>
+                                <div class="relative mt-1">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <i class="fas fa-barcode text-slate-400"></i>
+                                    </div>
+                                    <input wire:model="code" type="text" id="code" placeholder="cth: KB-302010 (Unique)" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
                                 </div>
-                                {{-- ---- Perubahan Placeholder ---- --}}
-                                <input wire:model="code" type="text" id="code" placeholder="cth: KB-302010 (Unique)" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
-                                {{-- ----------------------------- --}}
+                                @error('code') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
                             </div>
-                            @error('code') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
+                            <div>
+                                <label for="stok_minimum" class="text-sm font-medium text-slate-700">Stok Minimum <span class="text-red-500">*</span></label>
+                                <div class="relative mt-1">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <i class="fas fa-exclamation-triangle text-slate-400"></i>
+                                    </div>
+                                    <input wire:model="stok_minimum" id="stok_minimum" type="number" step="1" min="0" placeholder="cth: 10" class="block w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                </div>
+                                @error('stok_minimum') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -148,7 +178,8 @@
                                 @error('harga_jual') <span class="mt-1 text-xs text-red-500">{{ $message }}</span> @enderror
                             </div>
                         </div>
-                        </div>
+
+                    </div>
                     <div class="flex justify-end space-x-3 rounded-b-xl border-t border-slate-200 bg-slate-50 p-6">
                         <button type="button" @click="show = false" class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100">Batal</button>
                         <button type="submit" class="inline-flex items-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800">Simpan Item</button>
